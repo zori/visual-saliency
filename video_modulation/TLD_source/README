@@ -1,0 +1,152 @@
+TLD (aka Predator)
+----------------------------------------------------------------------------
+
+TLD is an algorithm for tracking of unknown objects in unconstrained video streams. The object of interest is defined by a bounding box in a single frame. TLD simultaneously tracks the object, learns its appearance and detects it whenever it appears in the video.
+
+1. License
+
+This source code is managed by the University of Surrey. J.Hodrien@surrey.ac.uk
+
+2. Project website
+
+You can find more information about TLD at: http://kahlan.eps.surrey.ac.uk/featurespace/tld. This includes the description of TLD, links to research papers, posters and the licensing options.
+
+
+INSTALLATION INSTRUCTIONS
+Windows
+
+Windows7 x 32bits:
+
+Tested on: Matlab R2010a, MS Visual Studio 2010, Windows 7 (32-bit), OpenCV2.2.
+
+You will need some extension toolboxes for Matlab, see below.
+
+1) Install OpenCV2.2: compile OpenCV, set system PATH variable to link to OpenCV DLLs
+
+2) Setup mex compiler in Matlab: run: mex -setup, select Visual Studio 2010 compiler from the list
+
+3) Compilation of mex files: check paths in 'compile.m' file, run 'compile.m'
+
+3.1) If you are using Matlab 2011a, in TLD source, comment out the following lines in lk.cpp, fern.cpp, and bb_overlap.cpp (Otherwise, you will get an error about int being undefined which is a no-no in 2010):
+
+#ifdef _CHAR16_T 
+
+#define CHAR16_T 
+
+#endif 
+4) run 'run_TLD.m', TLD should track a motorbike
+
+Windows7 x 64bits:
+
+Matlab R2010b x 64bits
+
+Win7 x 64
+
+VS2010 x 64
+
+1) download OpenCV2.2 source (normal binary installer is 32-bit, so you will need to recompile all from source)
+
+2) configure CMake compiler for VS2010 64bit compiler
+
+2.1) set opencv cmake build directory to OpenCV2.2/build64
+
+2.2) configure & generate SLN file
+
+2.3) open OpenCV.sln with VS2010
+
+2.4) build entire solution
+
+2.5) build INSTALL project (this puts include files in the appropriate places)
+
+3) edit compile.m in TLD for the two openCV paths for include and lib; mine look like so:
+
+include = ' -If:\dan\OpenCV-2.2.0\build64\include\opencv\ -If:\dan\OpenCV-2.2.0\build64\include\' ;
+
+libpath = 'f:\dan\OpenCV-2.2.0\build64\lib\';
+4) Add path to OpenCV2.2 dll's to the PATH environment variable: f:\dan\OpenCV-2.2.0\build64\bin'
+
+5) In TLD source, comment out the following lines in lk.cpp, fern.cpp, and bb_overlap.cpp
+
+#ifdef _CHAR16_T 
+
+#define CHAR16_T 
+
+#endif 
+Otherwise, you will get an error about int being undefined which is a no-no in 2010.
+
+6) In Matlab, run compile.m
+
+6.1) If you get include errors, see 2.5
+
+7) run run_TLD.m
+
+7.1) If you get a 32-bit error, make sure your path points to the 64bit version of OpenCV dll's
+
+Alternative setup for Windows 7 x64:
+
+Matlab R2010a patched to work with Visual studio 2010
+
+Patch download link: http://www.mathworks.com/support/solutions/en/data/1-D5W493/?solution=1-D5W493
+
+Visual Studio 2010
+
+OpenCV2.2 32 bit version
+
+To make it work simply follow the windows 7 x32 bits step guide above
+
+Mac
+
+1) Install Xcode
+
+you can get the old version free at http://developer.apple.com/ (you will need to register a free developer account), alternatively get it from the Mac AppStore
+
+2) Install Matlab (>= R2009b) (>=R2011a for webcam support). You will need some extension toolboxes, see below.
+
+Be mindful of what versions of Xcode and Matlab you're running - may need a patch for xcode 4.2 LLVM gcc-4.2 available from the mathworks site : http://www.mathworks.co.uk/support/solutions/en/data/1-FR6LXJ/index.html (Lion, Matlab 2011a, xcode 4.2)
+
+3) Install OpenCV (see Installing OpenCV for OS X for help)
+
+You may encounter libtiff run time errors due to older versions, have a poke about dir's /Applications/matlab/bin/maci64 and opt/local/lib as Matlab might be referencing an older version (Lion, Matlab 2011a, xcode 4.2)
+
+4a) replace 'compile.m' in OpenTLD with the modified 'compile.m' at https://github.com/nemesit/OpenTLD/blob/master/compile.m
+
+4b) run 'compile.m', (either in matlab or octave). If you get errors go to OpenTLD discussion group
+
+4c) run 'run_TLD.m' it should track a Motorbike
+
+5) Optional:
+
+if you want to track other things with you webcam/isight you have to edit 'initcamera.m' and change 'winvideo' to 'macvideo' or any other adapter you have installed (you can get a list of all installed adapter names by typing: imaqhwinfo in matlab ). For the built in isight only source.vid = videoinput('macvideo', 1); seems to work.
+
+You also have to edit the line
+
+opt.source = struct('camera',0,'input','_input/','bb0',[]); in 'run_TLD.m' to
+
+opt.source = struct('camera',1,'input','_input/','bb0',[]);
+
+If you're running openCV 2.3 you may also need to edit the following line in lk.cpp (Lion, Matlab 2011a, xcode 4.2)
+
+cvCalcOpticalFlowPyrLK( IMG[J], IMG[I], PYR[J], PYR[I], points[1], points[2], nPts, cvSize(win_size,win_size), Level, 0 , 0, cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,20,0.03), CV_LKFLOW_INITIAL_GUESSES | CV_LKFLOW_PYR_A_READY | CV_LKFLOW_PYR_B_READY );
+
+to
+
+cvCalcOpticalFlowPyrLK( IMG[J], IMG[I], PYR[J], PYR[I], points[1], points[2], nPts, cvSize(win_size,win_size), Level, status , 0, cvTermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS,20,0.03), CV_LKFLOW_INITIAL_GUESSES | CV_LKFLOW_PYR_A_READY | CV_LKFLOW_PYR_B_READY );
+
+Linux
+
+1) Install OpenCV
+
+sudo apt-get install libcv-dev (this will most probably be 2.1)
+
+2) Install Matlab (>= R2009b). You will need some extension toolboxes, see below.
+
+3) Check paths in 'compile.m' file
+
+4) run 'compile.m', (either in matlab or octave). If you get errors go to OpenTLD discussion group
+
+5) run 'run_TLD.m', TLD should track a motorbike
+
+Matlab toolboxes needed
+
+Image Acquisition Toolbox, Image Processing Toolbox, Signal Processing Toolbox, Statistics Toolbox
+
