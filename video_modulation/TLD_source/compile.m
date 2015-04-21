@@ -39,6 +39,8 @@ if ispc
 elseif ismac
     disp('Mac');
     
+    % edited by Zori
+    % /usr/include/opencv/cv.h
     include = ' -I/opt/local/include/opencv/ -I/opt/local/include/'; 
     libpath = '/opt/local/lib/'; 
     
@@ -59,10 +61,17 @@ elseif ismac
 else
     disp('Unix');
     
-    include = ' -I/usr/local/include/opencv/ -I/usr/local/include/';
-    libpath = '/usr/local/lib/';
+    % % /usr/include/opencv/
+    % /usr/lib/x86_64-linux-gnu/libstdc++.so.6 % for version `GLIBCXX_3.4.20' (required by /usr/lib/x86_64-linux-gnu/libopencv_core.so.2.4)
+    include = ' -I/usr/include/opencv/ -I/usr/include/ '; % -L/usr/lib/x86_64-linux-gnu/libstdc++.so.6 '; %-I/home/zori/sources/OpenCV-2.2.0/include/opencv/'; % -I/usr/include/opencv2/highgui';
+    % include = ' -I/usr/local/include/opencv/ -I/usr/local/include/';
+    % % /usr/lib/x86_64-linux-gnu/libopencv_video.so.2.4.9
+    libpath = '/usr/lib/x86_64-linux-gnu/';
+    % libpath = '/usr/local/lib/';
     
-    files = dir([libpath 'libopencv*.so.2.2']);
+    files = dir([libpath 'libopencv*.so']);
+    % files = dir([libpath 'libopencv*.so.2.4']);
+    % files = dir([libpath 'libopencv*.so.2.2']);
     
     lib = [];
     for i = 1:length(files),
