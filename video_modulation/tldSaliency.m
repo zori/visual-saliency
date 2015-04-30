@@ -92,7 +92,7 @@ flash.frm{1}   = crtFrame;
 flash.diffs{1} = diffs;
 flash.mask{1}  = mask;
 flash.crtBB{1} = crtBB;
-% shift flash
+% shift flash (move values "back", creating a moving window)
 W = circshift(W, [0,0,1]);
 flash.frm   = circshift(flash.frm,   1);
 flash.diffs = circshift(flash.diffs, 1);
@@ -167,6 +167,8 @@ for i = 2:length(tld.source.idx) % for every frame
         meanW = mean(W, 3);
         iptImg = flash.frm{1};
         optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+        %         % TODO(Z)
+        %         optImg=editedFrame;
         writeVideo(writerObj, optImg);
         visualHandles = init_visual(iptImg, optImg, [], [], meanW, ...
                                     flash.crtBB{1});
@@ -179,6 +181,8 @@ for i = 2:length(tld.source.idx) % for every frame
         meanW = mean(W, 3);
         iptImg = flash.frm{1};
         optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+        %         % TODO(Z)
+        %         optImg=editedFrame;
         writeVideo(writerObj, optImg);
         visualHandles = visualize(iptImg, optImg, [], [], meanW, ...
                                   flash.crtBB{1}, visualHandles);
@@ -211,7 +215,7 @@ for i = 2:length(tld.source.idx) % for every frame
         return;
     end
     
-    if tld.plot.save == 1
+    if tld.plot.save == 1 % TODO(zori) where to set that to be also saving the plot?
         img = getframe;
         imwrite(img.cdata,[tld.output num2str(i,'%05d') '.png']);
     end
@@ -221,6 +225,8 @@ end
 
 %%
 %--SALIENCY-BEGIN--
+% TODO(zori) what is 'flash'; is this the post-processing loop; how are the
+% weights smoothed?
 for i = 1:param.flashL
     % shift flash
     W = circshift(W, [0,0,1]);
@@ -232,6 +238,8 @@ for i = 1:param.flashL
     meanW = mean(W, 3);
     iptImg = flash.frm{1};
     optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+    %     % TODO(Z)
+    %     optImg=editedFrame;
     writeVideo(writerObj, optImg);
     visualHandles = visualize(iptImg, optImg, [], [], meanW, ...
                               flash.crtBB{1}, visualHandles);

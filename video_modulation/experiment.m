@@ -1,4 +1,4 @@
-%% image index contorlling
+%% image index controlling
 startIdx = 1;
 nImage = 50;
 
@@ -42,9 +42,9 @@ for paramIdx = 1:nParamChoices
                  strcat(num2str(imageFileNum, '%02d'),'_M.bmp') ...
                ));
         % select and set param
-%         param.ehcA  = ehcAOptions{paramIdx};
-%         param.ehcKc = ehcKcOptions{paramIdx};
-%         param.ehcKd = ehcKdOptions{paramIdx};
+        param.ehcA  = ehcAOptions{paramIdx};
+        param.ehcKc = ehcKcOptions{paramIdx};
+        param.ehcKd = ehcKdOptions{paramIdx};
         [param.resY, param.resX, param.nChannel] = size(sourceImage);
         set_param;
         

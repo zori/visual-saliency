@@ -1,5 +1,5 @@
-function [ pyraS ] = shift_pyra( pryaO )
-%SHIFT_PYRA create S pyramids form O pyramid, given predefined directions 
+function [ pyraS ] = shift_pyra( pyraO )
+%SHIFT_PYRA create S pyramids from O pyramid, given predefined directions 
 %   @author Tao
 
     global param;
@@ -9,7 +9,7 @@ function [ pyraS ] = shift_pyra( pryaO )
         motion = param.motionVectors{directIdx};
         for scaleIdx = 1:(param.pyraScales+1)
             res = param.pyraRes{scaleIdx};
-            shiftedImage = circshift(pryaO{directIdx, scaleIdx}, motion);
+            shiftedImage = circshift(pyraO{directIdx, scaleIdx}, motion);
             if motion(1)
                 shiftedImage(mod(motion(1), res(1) + 1), :) = 0;
             end

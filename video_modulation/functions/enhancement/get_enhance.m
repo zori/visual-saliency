@@ -24,6 +24,9 @@ function [ ehc, wMat ] = get_enhance( diff, maskPyra )
     
     [roi, roiM] = range_compress(roi .*    maskPyra{1} );
     [bkg, bkgM] = range_compress(bkg .* (1-maskPyra{1}));
+%     % TODO(zori) how much should this parameter be?
+%     param.ehcA  = 1/10; % from experiment.m
+%     param.ehcA = 1/3; % commented-out; from set_param.m
     ehc = param.ehcA * (roi - param.ehcBd * bkg);
     wMat = wMat * param.ehcA * [1/roiM, 0               ; ...
                                 0     , param.ehcBd/bkgM];

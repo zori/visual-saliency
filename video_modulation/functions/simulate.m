@@ -1,5 +1,5 @@
 function [ inhibitedMap ] = simulate( map )
-%SIMULATE select the most salilent teature and inhibit the region around it
+%SIMULATE select the most salilent feature and inhibit the region around it
 %   @author Tao
 
     global param;

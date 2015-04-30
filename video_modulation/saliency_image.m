@@ -12,7 +12,20 @@
 
 %% set parameters
 global param;
+% TODO(zori) Why does he clean the param that he took the trouble to set in
+% experiment?
 param = {};
+% BEGIN zori (copied from experiment.m)
+param.ehcA  = 1/10;
+% ehcAOptions  = {1/50, 1/20, 1/10, 1/5, 1/2};
+param.ehcKc = 5;
+% ehcKcOptions = {2, 3, 5, 10, 20};
+param.ehcKd = 10;
+% ehcKdOptions = {2, 3, 5, 10, 20};
+param.moduC = [1, 2, 3];
+param.moduDelta = [3, 4];
+% END zori
+
 [param.resY, param.resX, param.nChannel] = size(sourceImage);
 set_param;
 
@@ -35,6 +48,7 @@ SBef = simple_n(enlarge(SBef));
 %  refine mask
 
     % only for images set from Aiko
+    % TODO(zori) OMG, this will ONLY work for one type of resolution; WHY?!?!
     mask = mask(1:256,1:512);
     if size(mask,3) == 3
         mask = rgb2gray(mask);

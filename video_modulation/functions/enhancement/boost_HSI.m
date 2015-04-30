@@ -13,7 +13,7 @@ function [ editedImg, dW ] = boost_HSI( img, diffs, maskPyra )
     [ehc.H , ehc.S] = RGBY2pol(ehc.RG * param.ehcBc, ehc.BY * param.ehcBc);
     dW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc];
     
-    % vector adddtion
+    % vector addition
     [befX, befY] = pol2cart(hsi(:,:,1), hsi(:,:,2));
     [ehcX, ehcY] = pol2cart(ehc.H, ehc.S);
     [aftHue, aftSat] = cart2pol(befX + ehcX, befY + ehcY);
