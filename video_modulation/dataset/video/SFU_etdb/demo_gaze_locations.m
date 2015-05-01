@@ -6,14 +6,15 @@
 % 8888 University Drive, Burnaby, BC, V5A 1S6, Canada
 %==========================================================================
 
-clc
-clear all
-close all
+% clc
+% clear all
+% close all
 
 % Input YUV file
-VideoFile = 'RAW\\FOREMAN_352x288_30_orig.yuv';
+VideoFile = fullfile('RAW','FOREMAN_352x288_30_orig.yuv');
 % Input CSV file that contains gaze locations
-InputCSV = 'CSV\\foreman-Screen.csv';
+InputCSV = fullfile('CSV','foreman-Screen.csv'); % InputCSV = fullfile('CSV','foreman-Screen.csv'); % the original file with top two lines is foreman-Screen_orig.csv
+% InputCSV = fullfile('CSV','foreman-Screen_basic.csv');
 ViewMode = 3; % show the heatmap for both first and second viewing, use 1 for the first viewing, and 2 for the second viewing
 
 ShowGazeLocations(VideoFile, InputCSV, ViewMode);

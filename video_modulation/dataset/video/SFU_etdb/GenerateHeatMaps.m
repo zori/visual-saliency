@@ -59,7 +59,8 @@ else
         case {'tempete-screen'}
             maskfile = {'tempete-mask.csv'};
     end
-    [FlagMatrix texts] = xlsread(sprintf('%s\\%s',char(path),char(maskfile)));
+    maskfilename=fullfile(path,maskfile{1});
+    FlagMatrix = csvread(maskfilename);
     %----------------------------------------------------------------------
     % Get the size of the gaussian image
     [N M] = size(gauss);
@@ -70,7 +71,7 @@ else
     if(exist(InputCSV,'file'))
         if(exist(VideoFile, 'file'))
             % Read the gaze locations from the input CSV file
-            [GazeLocations texts] = xlsread(InputCSV);
+            GazeLocations = csvread(InputCSV);
             [NumberOfFrames tmp] = size(GazeLocations);
             str = sprintf('Processing %d frames...', NumberOfFrames);
             disp(str)

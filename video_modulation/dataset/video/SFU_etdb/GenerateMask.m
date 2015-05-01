@@ -39,7 +39,8 @@ NumberOfSubjects = 15;
 %--------------------------------------------------------------------------
 %reading the input CSV file containing the gaze data
 %--------------------------------------------------------------------------
-[GazeLocations texts] = xlsread(InputCSV);
+% [GazeLocations texts] = xlsread(InputCSV);
+GazeLocations = csvread(InputCSV);
 [NumberOfFrames tmp] = size(GazeLocations);
 
 %generating the binary mask file, flag_matrix=1 means valid gaze data
@@ -137,18 +138,19 @@ switch lower(name)
         outfile = {'tempete-mask.csv'};
 end
 
-fid = fopen(sprintf('%s\\%s',char(path),char(outfile)),'w');
-fprintf(fid,'Mask file for gaze locations - one means valid gaze data\n');
-n=1;
-for i=1:4:60
-    fprintf(fid,'P%dV1 - X,',n);
-    fprintf(fid,'P%dV1 - Y,',n);
-    fprintf(fid,'P%dV2 - X,',n);
-    fprintf(fid,'P%dV2 - Y,',n);
-    n = n + 1;
-end
-fprintf(fid,'\n');
-fclose(fid);
-dlmwrite(sprintf('%s\\%s',char(path),char(outfile)),flag_matrix,'-append');
+outfilename=fullfile(path,outfile{1});
+% fid = fopen(outfilename,'w');
+% fprintf(fid,'Mask file for gaze locations - one means valid gaze data\n');
+% n=1;
+% for i=1:4:60
+%     fprintf(fid,'P%dV1 - X,',n);
+%     fprintf(fid,'P%dV1 - Y,',n);
+%     fprintf(fid,'P%dV2 - X,',n);
+%     fprintf(fid,'P%dV2 - Y,',n);
+%     n = n + 1;
+% end
+% fprintf(fid,'\n');
+% fclose(fid);
+dlmwrite(outfilename,flag_matrix); %,'-append');
 disp 'Done.'
 end

@@ -56,7 +56,9 @@ else
         case {'tempete-screen'}
             maskfile = {'tempete-mask.csv'};
     end
-    [FlagMatrix texts] = xlsread(sprintf('%s\\%s',char(path),char(maskfile)));
+    maskfilename=fullfile(path,maskfile{1}); % sprintf('%s\\%s',char(path),char(maskfile))
+    % [FlagMatrix texts] = xlsread(maskfilename);
+    FlagMatrix = csvread(maskfilename);
     %----------------------------------------------------------------------
     NoSubjects = 15;
     % Define the set of colors for displaying the gaze locations
@@ -69,7 +71,7 @@ else
     if(exist(InputCSV,'file'))
         if(exist(VideoFile, 'file'))
             % Read the gaze locations from the input CSV file
-            [GazeLocations texts] = xlsread(InputCSV);
+            GazeLocations = csvread(InputCSV); % this would only work on Windows: % [GazeLocations texts] = xlsread(InputCSV);
             [NumberOfFrames tmp] = size(GazeLocations);
             str = sprintf('Processing %d frames...', NumberOfFrames);
             disp(str)
