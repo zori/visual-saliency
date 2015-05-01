@@ -5,7 +5,7 @@
 
 
 beep off;
-clc; clf;
+% clc; clf;
 clear tld;
 clear global;
 warning off all;

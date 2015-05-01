@@ -6,6 +6,10 @@
 function [bb,conf,weights] = tldSaliency(opt)
 
 global tld; % holds results and temporal variables
+% allow to not visualise the modulation
+% however, interrupting the processing earlier (by pressing 'q') depends on
+% having the figure visible, as the key listener (handleKey) is attached to it
+TO_VISUALIZE=true;
 
 %%
 %--SALIENCY-BEGIN--
@@ -21,9 +25,17 @@ param = {};
 opt.source = tldInitSource(opt.source);
 
 % open figure for display of results
-figure(2); set(2,'KeyPressFcn', @handleKey);
-% by pressing any key, the process will exit8
-finish = 0; function handleKey(~,~), finish = 1; end 
+fig_h=2;
+figure(fig_h);
+    function handleKey(~,evnt)
+        % disp(evt.Key)
+        if strcmp(evnt.Key,'q')
+            finish = 1;
+        end
+    end
+set(fig_h,'KeyPressFcn',@handleKey);
+% by pressing 'q' key, the process will exit
+finish = 0;
 
 while 1
     % get initial bounding box, return 'empty' if bounding box is too small
@@ -69,7 +81,14 @@ flash.crtBB = cell(param.flashL, 1);
 weights = zeros(param.nEhcMaps, 6, param.nFrames);
 weightsIdx = 1;
 
-writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
+% writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
+timestamp = datestr(clock,'yyyy-mm-dd_HH-MM-SS');
+output_video_name = [timestamp '.avi'];
+output_video_path = fullfile('..', 'experiments', opt.sequence_name);
+if ~exist(output_video_path,'dir')
+    mkdir(output_video_path)
+end
+writerObj = VideoWriter(fullfile(output_video_path, output_video_name));
 set(writerObj, 'FrameRate', param.fps);
 open(writerObj);
 
@@ -170,8 +189,10 @@ for i = 2:length(tld.source.idx) % for every frame
         %         % TODO(Z)
         %         optImg=editedFrame;
         writeVideo(writerObj, optImg);
-        visualHandles = init_visual(iptImg, optImg, [], [], meanW, ...
+        if TO_VISUALIZE
+            visualHandles = init_visual(fig_h, iptImg, optImg, [], [], meanW, ...
                                     flash.crtBB{1});
+        end
         % SAft = simple_n(enlarge(get_salimap(pyrasAft)));
         
         weights(:,:,weightsIdx) = meanW;
@@ -184,9 +205,10 @@ for i = 2:length(tld.source.idx) % for every frame
         %         % TODO(Z)
         %         optImg=editedFrame;
         writeVideo(writerObj, optImg);
-        visualHandles = visualize(iptImg, optImg, [], [], meanW, ...
+        if TO_VISUALIZE
+            visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
                                   flash.crtBB{1}, visualHandles);
-        
+        end
         weights(:,:,weightsIdx) = meanW;
         weightsIdx = weightsIdx + 1;
         
@@ -241,9 +263,10 @@ for i = 1:param.flashL
     %     % TODO(Z)
     %     optImg=editedFrame;
     writeVideo(writerObj, optImg);
-    visualHandles = visualize(iptImg, optImg, [], [], meanW, ...
+    if TO_VISUALIZE
+        visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
                               flash.crtBB{1}, visualHandles);
-                          
+    end
     weights(:,:,weightsIdx) = meanW;
     weightsIdx = weightsIdx + 1;
     

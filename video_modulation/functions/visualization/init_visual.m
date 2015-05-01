@@ -1,9 +1,9 @@
-function [ handle ] = init_visual( crtFrame, editedFrame, SBef, SAft, ...
+function [ handle ] = init_visual( fig_h, crtFrame, editedFrame, SBef, SAft, ...
                                    W, BB )
 %INIT_VISUAL initial visualisation window
 %   @author Tao
 
-    figure(2);
+    change_cur_fig(fig_h);
     handle = {};
     
     subplot(2,2,1);

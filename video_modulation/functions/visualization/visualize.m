@@ -1,9 +1,9 @@
-function [ handle ] = visualize( crtFrame, editedFrame, SBef, SAft, ...
+function [ handle ] = visualize( fig_h, crtFrame, editedFrame, SBef, SAft, ...
                                  W, BB, handle )
 %VISUALIZE visualization
 %   @author Tao
 
-    figure(2);
+    change_cur_fig(fig_h);
     
     subplot(2,2,1);
     set(handle.imgBef, 'CData', crtFrame);
