@@ -2,5 +2,10 @@
 *.o
 video_modulation/TLD_source/_output/
 " attempts to explore different ROIs for the city sequence; most of them fail to be tracked by TLD
-video_modulation/dataset/video/city/init_*
+video_modulation/dataset/video/orig_city_300/init_*
 experiments/
+
+" SFU etdb dataset files (removed leading met-alines in csv files)
+video_modulation/dataset/video/SFU_etdb/CSV/foreman-Screen_backup.csv
+video_modulation/dataset/video/SFU_etdb/CSV/foreman-Screen_orig.csv
+video_modulation/dataset/video/SFU_etdb/CSV/foreman-mask_orig.csv

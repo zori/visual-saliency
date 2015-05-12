@@ -29,6 +29,9 @@ else
     % check
     if isempty(source.bb) || min(bb_size(source.bb)) < min_win
        source = [];
+    else
+       % record the manually chosen location
+       dlmwrite(init_bb_filename,source.bb'); % e.g. 'video_modulation/dataset/video/city/init.txt'
     end
 end
 

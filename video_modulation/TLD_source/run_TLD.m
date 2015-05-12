@@ -9,7 +9,15 @@
 init_workspace;
 
 % opt.source          = struct('camera',0,'input','TLD_source/_input/','bb0',[]);
-opt.sequence_name   = 'city'; % 'etdb_foreman_352x288_30';
+% opt.sequence_name   = 'city';
+%opt.sequence_name   = 'etdb_foreman_352x288_30';
+opt.sequence_name   = 'etdb_HallMonitor_cif_300';
+opt.sequence_name   = 'etdb_HARBOUR_352x288_30_300';
+opt.sequence_name   = 'etdb_MOBILE_352x288_30_300';
+opt.sequence_name   = 'etdb_stefan_cif_90';
+opt.sequence_name   = 'etdb_tempete_cif_260';
+% opt.sequence_name   = 'orig_bridge_close_300';
+
 opt.source          = struct('camera',0,'input',fullfile('dataset','video',opt.sequence_name,filesep),'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
 opt.output          = 'TLD_source/_output/'; mkdir(opt.output); % output directory that will contain bounding boxes + confidence
 

@@ -4,6 +4,12 @@
 %
 
 function [bb,conf,weights] = tldSaliency(opt)
+% three modulation options:
+% 1) no modulation (would result in flicker)
+% 2) video modulation with simple moving average (as Tao SHI originally implemented)
+% 3) exponential smoothing with smoothing weight alpha
+MODULATION=1;
+fprintf('\nMODULATION type: %s\n', int2str(MODULATION));
 
 global tld; % holds results and temporal variables
 % allow to not visualise the modulation
@@ -27,14 +33,9 @@ opt.source = tldInitSource(opt.source);
 % open figure for display of results
 fig_h=2;
 figure(fig_h);
-    function handleKey(~,evnt)
-        % disp(evt.Key)
-        if strcmp(evnt.Key,'q')
-            finish = 1;
-        end
-    end
-set(fig_h,'KeyPressFcn',@handleKey);
+set(fig_h,'KeyPressFcn',@handle_q_key);
 % by pressing 'q' key, the process will exit
+global finish;
 finish = 0;
 
 while 1
@@ -71,7 +72,28 @@ elseif length(tld.source.idx) < param.wSpan
 end
 
 % some other initializations
-W = zeros(param.nEhcMaps, 6, param.wSpan);
+% TODO(zori) where is the "magical 6" taken from
+MAGICAL_DIMENSION=6;
+W = zeros(param.nEhcMaps, MAGICAL_DIMENSION, param.wSpan);
+smoothing_param_recipr=3;
+smoothing_param = 1/smoothing_param_recipr; % exponential smoothing param; in (0,1]
+fprintf('\nsmoothing param recipr: %s; smoothing param: %f\n', num2str(smoothing_param_recipr), smoothing_param);
+alpha=ones(param.wSpan,1).*smoothing_param;
+for k=2:param.wSpan
+    alpha(k:end)=alpha(k:end).*(1-smoothing_param);
+end
+% for smoothing_param = 1/3:
+% alpha: 0.3333    0.2222    0.1481    0.0988    0.0658    0.0439    0.0293    0.0195    0.0130
+%
+% for smoothing_param = 1/6:
+% alpha: 0.1667    0.1389    0.1157    0.0965    0.0804    0.0670    0.0558    0.0465    0.0388
+%
+% for smoothing_param = 1/7:
+% alpha: 0.1429    0.1224    0.1050    0.0900    0.0771    0.0661    0.0567    0.0486    0.0416
+%
+% for smoothing_param = 1/9:
+% 0.1111    0.0988    0.0878    0.0780    0.0694    0.0617    0.0548    0.0487    0.0433
+
 flash = {};
 flash.frm   = cell(param.flashL, 1);
 flash.diffs = cell(param.flashL, 1);
@@ -83,12 +105,18 @@ weightsIdx = 1;
 
 % writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
 timestamp = datestr(clock,'yyyy-mm-dd_HH-MM-SS');
-output_video_name = [timestamp '.avi'];
+video_name_append=[' MOD' num2str(MODULATION)];
+if MODULATION==3
+    video_name_append=[video_name_append ' SMOOTH' num2str(smoothing_param_recipr)];
+end
+output_video_name = [timestamp video_name_append '.avi'];
 output_video_path = fullfile('..', 'experiments', opt.sequence_name);
 if ~exist(output_video_path,'dir')
     mkdir(output_video_path)
 end
-writerObj = VideoWriter(fullfile(output_video_path, output_video_name));
+output_video = fullfile(output_video_path, output_video_name);
+fprintf('\noutput video is: %s\n', output_video);
+writerObj = VideoWriter(output_video);
 set(writerObj, 'FrameRate', param.fps);
 open(writerObj);
 
@@ -183,12 +211,25 @@ for i = 2:length(tld.source.idx) % for every frame
     end
     
     if i == param.flashL
-        meanW = mean(W, 3);
         iptImg = flash.frm{1};
-        optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
-        %         % TODO(Z)
-        %         optImg=editedFrame;
-        writeVideo(writerObj, optImg);
+        switch MODULATION
+            case 1
+                optImg=editedFrame;
+                meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
+            case 2
+                meanW = mean(W, 3);
+                % or, equivalently:
+                % same as case 3, only alpha is a vector of length param.wSpan
+                % with values 1.param.wSpan
+                optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+            case 3
+                ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
+                res=ww*alpha;
+                meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
+                optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+            otherwise
+                error('wrong modulation value');
+        end
         if TO_VISUALIZE
             visualHandles = init_visual(fig_h, iptImg, optImg, [], [], meanW, ...
                                     flash.crtBB{1});
@@ -199,11 +240,25 @@ for i = 2:length(tld.source.idx) % for every frame
         weightsIdx = weightsIdx + 1;
         
     elseif i > param.flashL
-        meanW = mean(W, 3);
         iptImg = flash.frm{1};
-        optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
-        %         % TODO(Z)
-        %         optImg=editedFrame;
+        switch MODULATION
+            case 1
+                meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
+                optImg=editedFrame;
+            case 2
+                meanW = mean(W, 3);
+                % or, equivalently:
+                % same as case 3, only alpha is a vector of length param.wSpan
+                % with values 1.param.wSpan
+                optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+            case 3
+                ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
+                res=ww*alpha;
+                meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
+                optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+            otherwise
+                error('wrong modulation value');
+        end
         writeVideo(writerObj, optImg);
         if TO_VISUALIZE
             visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
@@ -257,11 +312,25 @@ for i = 1:param.flashL
     flash.mask  = circshift(flash.mask,  1);
     flash.crtBB = circshift(flash.crtBB, 1);
     
-    meanW = mean(W, 3);
     iptImg = flash.frm{1};
-    optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
-    %     % TODO(Z)
-    %     optImg=editedFrame;
+    switch MODULATION
+        case 1
+            optImg=editedFrame;
+            meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
+        case 2
+            meanW = mean(W, 3);
+            % or, equivalently:
+            % same as case 3, only alpha is a vector of length param.wSpan
+            % with values 1.param.wSpan
+            optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+        case 3
+            ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
+            res=ww*alpha;
+            meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
+            optImg = enhance(iptImg, flash.diffs{1}, flash.mask{1}, meanW);
+        otherwise
+            error('wrong modulation value');
+    end
     writeVideo(writerObj, optImg);
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
@@ -280,3 +349,12 @@ close(writerObj);
 bb = tld.bb; conf = tld.conf; % return results
 
 end
+
+function handle_q_key(~,evnt)
+global finish;
+% disp(evt.Key)
+if strcmp(evnt.Key,'q')
+    finish = 1;
+end
+end
+
