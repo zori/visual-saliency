@@ -2,7 +2,7 @@
 *.o
 video_modulation/TLD_source/_output/
 " attempts to explore different ROIs for the city sequence; most of them fail to be tracked by TLD
-video_modulation/dataset/video/orig_city_300/init_*
+video_modulation/dataset/video/*/init_*
 experiments/
 
 " SFU etdb dataset files (removed leading met-alines in csv files)
