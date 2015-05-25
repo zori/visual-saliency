@@ -34,8 +34,8 @@ function [ pyras ] = make_pyras( varargin )
     pyras.G = gauss_pyra(G);
     pyras.B = gauss_pyra(B);
     pyras.Y = gauss_pyra(Y);
-    pyras.I = gauss_pyra(I);
-    pyras.O = gabor_pyra(I);
+    pyras.I = gauss_pyra(I); % intensity
+    pyras.O = gabor_pyra(I); % orientation TODO(zori) (?)
     pyras.S = shift_pyra(pyras.O);
     
     if nargin > 1

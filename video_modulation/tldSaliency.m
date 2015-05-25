@@ -4,12 +4,7 @@
 %
 
 function [bb,conf,weights] = tldSaliency(opt)
-% three modulation options:
-% 1) no modulation (would result in flicker)
-% 2) video modulation with simple moving average (as Tao SHI originally implemented)
-% 3) exponential smoothing with smoothing weight alpha
-MODULATION=1;
-fprintf('\nMODULATION type: %s\n', int2str(MODULATION));
+fprintf('\nmodulation type: %s\n', int2str(opt.modulation));
 
 global tld; % holds results and temporal variables
 % allow to not visualise the modulation
@@ -75,9 +70,8 @@ end
 % TODO(zori) where is the "magical 6" taken from
 MAGICAL_DIMENSION=6;
 W = zeros(param.nEhcMaps, MAGICAL_DIMENSION, param.wSpan);
-smoothing_param_recipr=3;
-smoothing_param = 1/smoothing_param_recipr; % exponential smoothing param; in (0,1]
-fprintf('\nsmoothing param recipr: %s; smoothing param: %f\n', num2str(smoothing_param_recipr), smoothing_param);
+smoothing_param = 1/opt.smoothing_param_recipr; % exponential smoothing param; in (0,1]
+fprintf('\nsmoothing param recipr: %s; smoothing param: %f\n', num2str(opt.smoothing_param_recipr), smoothing_param);
 alpha=ones(param.wSpan,1).*smoothing_param;
 for k=2:param.wSpan
     alpha(k:end)=alpha(k:end).*(1-smoothing_param);
@@ -105,20 +99,51 @@ weightsIdx = 1;
 
 % writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
 timestamp = datestr(clock,'yyyy-mm-dd_HH-MM-SS');
-video_name_append=[' MOD' num2str(MODULATION)];
-if MODULATION==3
-    video_name_append=[video_name_append ' SMOOTH' num2str(smoothing_param_recipr)];
+if ~isempty(opt.source) && isfield(opt.source,'init_bb_name')
+    % would be 'init.txt' or 'init1.txt' or 'init2.txt'...
+    init_num=opt.source.init_bb_name(end-4);
+    if ~isempty(str2double(init_num))
+        video_name_append=[' INIT' init_num];
+    end
+else
+    video_name_append='';
 end
-output_video_name = [timestamp video_name_append '.avi'];
+video_name_append=[video_name_append ' MOD' num2str(opt.modulation)];
+if opt.modulation==3
+    video_name_append=[video_name_append ' SMOOTH' num2str(opt.smoothing_param_recipr)];
+end
+output_video_name = [timestamp video_name_append];
 output_video_path = fullfile('..', 'experiments', opt.sequence_name);
 if ~exist(output_video_path,'dir')
     mkdir(output_video_path)
 end
-output_video = fullfile(output_video_path, output_video_name);
+output_flicker_saliency_txt = fullfile(output_video_path, [output_video_name ' flicker-saliency' '.txt']);
+
+% create video writer objects for the video, the two saliency videos and the
+% merged output (the three next to each other)
+output_video = fullfile(output_video_path, [output_video_name '.avi']);
 fprintf('\noutput video is: %s\n', output_video);
-writerObj = VideoWriter(output_video);
-set(writerObj, 'FrameRate', param.fps);
-open(writerObj);
+videoWO = VideoWriter(output_video);
+set(videoWO, 'FrameRate', param.fps);
+open(videoWO);
+
+output_saliency_video = fullfile(output_video_path, [output_video_name ' saliency' '.avi']);
+fprintf('\noutput saliency video is: %s\n', output_saliency_video);
+videoSWO = VideoWriter(output_saliency_video);
+set(videoSWO, 'FrameRate', param.fps);
+open(videoSWO);
+
+output_flicker_saliency_video = fullfile(output_video_path, [output_video_name ' flicker-saliency' '.avi']);
+fprintf('\noutput flicker saliency video is: %s\n', output_flicker_saliency_video);
+videoFSWO = VideoWriter(output_flicker_saliency_video);
+set(videoFSWO, 'FrameRate', param.fps);
+open(videoFSWO);
+
+output_videos = fullfile(output_video_path, [output_video_name ' all' '.avi']);
+fprintf('\nmerged output videos is: %s\n', output_videos);
+videosWO = VideoWriter(output_videos);
+set(videosWO, 'FrameRate', param.fps);
+open(videosWO);
 
 fprintf('\nframe \tmax ROI \tmean diff \n');
 fprintf('001');
@@ -128,7 +153,14 @@ pyrasBef = make_pyras(crtFrame);
 diffs = make_diffs(pyrasBef);
 
 % make mask
-SBef = simple_n(enlarge(get_salimap(pyrasBef)));
+% SBef = simple_n(enlarge(get_salimap(pyrasBef)));
+[SBef, S_flicker] = get_salimap(pyrasBef);
+SBef = simple_n(enlarge(SBef));
+S_flicker = simple_n(enlarge(S_flicker));
+% fprintf('#1 mean saliency (normalised, upscaled):%f\n',mean(SBef(:)));
+% fprintf('#1 mean flicker saliency (as is):%f\n',mean(S_flicker(:)));
+avg_flicker_saliency=zeros(length(tld.source.idx),1);
+avg_flicker_saliency(1)=mean(S_flicker(:));
 mask = simple_n(get_video_mask(crtBB) .* SBef);
 
 % do enhancement
@@ -180,7 +212,13 @@ for i = 2:length(tld.source.idx) % for every frame
         diffs = make_diffs(pyrasBef);
 
         % make mask
-        SBef = simple_n(enlarge(get_salimap(pyrasBef)));
+        % SBef = simple_n(enlarge(get_salimap(pyrasBef)));
+        [SBef, S_flicker] = get_salimap(pyrasBef);
+        SBef = simple_n(enlarge(SBef));
+        S_flicker = simple_n(enlarge(S_flicker));
+%         fprintf('#2 mean saliency (normalised, upscaled):%f\n',mean(SBef(:)));
+%         fprintf('#2 mean flicker saliency (as is):%f\n',mean(S_flicker(:)));
+        avg_flicker_saliency(i)=mean(S_flicker(:));
         mask = simple_n(get_video_mask(crtBB) .* SBef);
         
         % do enhancement
@@ -212,7 +250,7 @@ for i = 2:length(tld.source.idx) % for every frame
     
     if i == param.flashL
         iptImg = flash.frm{1};
-        switch MODULATION
+        switch opt.modulation
             case 1
                 optImg=editedFrame;
                 meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
@@ -241,7 +279,7 @@ for i = 2:length(tld.source.idx) % for every frame
         
     elseif i > param.flashL
         iptImg = flash.frm{1};
-        switch MODULATION
+        switch opt.modulation
             case 1
                 meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
                 optImg=editedFrame;
@@ -259,7 +297,11 @@ for i = 2:length(tld.source.idx) % for every frame
             otherwise
                 error('wrong modulation value');
         end
-        writeVideo(writerObj, optImg);
+        writeVideo(videoWO, optImg);
+        writeVideo(videoSWO, SBef);
+        writeVideo(videoFSWO, S_flicker);
+        cc=stitch_outputs(optImg,SBef,S_flicker);
+        writeVideo(videosWO, cc);
         if TO_VISUALIZE
             visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
                                   flash.crtBB{1}, visualHandles);
@@ -283,7 +325,9 @@ for i = 2:length(tld.source.idx) % for every frame
         %%
         %--SALIENCY-BEGIN--
         
-        close(writerObj);
+        on_finish(videoWO,videoSWO,videoFSWO,videosWO,...
+            output_flicker_saliency_txt,avg_flicker_saliency);
+
         
         %---SALIENCY-END---
         %%
@@ -313,7 +357,7 @@ for i = 1:param.flashL
     flash.crtBB = circshift(flash.crtBB, 1);
     
     iptImg = flash.frm{1};
-    switch MODULATION
+    switch opt.modulation
         case 1
             optImg=editedFrame;
             meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
@@ -331,7 +375,13 @@ for i = 1:param.flashL
         otherwise
             error('wrong modulation value');
     end
-    writeVideo(writerObj, optImg);
+    writeVideo(videoWO, optImg);
+    % TODO(zori) fix these last |param.flashL| frames of the saliency (rather
+    % than copy the last computed value)
+    writeVideo(videoSWO, SBef);
+    writeVideo(videoFSWO, S_flicker);
+    cc=stitch_outputs(optImg,SBef,S_flicker);
+    writeVideo(videosWO, cc);
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, iptImg, optImg, [], [], meanW, ...
                               flash.crtBB{1}, visualHandles);
@@ -341,7 +391,8 @@ for i = 1:param.flashL
     
 end
 
-close(writerObj);
+on_finish(videoWO,videoSWO,videoFSWO,...
+    videosWO,output_flicker_saliency_txt,avg_flicker_saliency);
 
 %---SALIENCY-END---
 %%
@@ -358,3 +409,18 @@ if strcmp(evnt.Key,'q')
 end
 end
 
+function on_finish(videoWriterObj,videoSaliencyWriterObj,...
+    videoFlickerSaliencyWriterObj,videosWO,output_flicker_saliency_txt,avg_flicker_saliency)
+close(videoWriterObj);
+close(videoSaliencyWriterObj);
+close(videoFlickerSaliencyWriterObj);
+close(videosWO);
+
+dlmwrite(output_flicker_saliency_txt,mean(avg_flicker_saliency),'delimiter',' ');
+dlmwrite(output_flicker_saliency_txt,avg_flicker_saliency','-append',...
+    'roffset',1,'delimiter',' ');
+end
+
+function stitched = stitch_outputs(optImg,SBef,S_flicker)
+stitched=cat(1,optImg,repmat(SBef,[1 1 3]),repmat(S_flicker,[1 1 3]));
+end

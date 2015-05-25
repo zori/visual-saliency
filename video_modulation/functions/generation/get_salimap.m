@@ -1,4 +1,4 @@
-function [ S ] = get_salimap( pyras )
+function [ S, S_flicker ] = get_salimap( pyras )
 %GET_MAP Generate sliency map for each give frame
 %   @author Tao
 
@@ -60,14 +60,16 @@ function [ S ] = get_salimap( pyras )
         
         % master saliency map
         S = (N(cspMaps.I) + N(cspMaps.C) + N(cspMaps.O) + ...
-             N(cspMaps.M)) / 3;
+             N(cspMaps.M)) / 3; % divide by 3, as in 'Realistic avatar eye and head animation using a neurobiological model of visual attention'
+        % flicker saliency
+        S_flicker=cspMaps.F;
         
     else
     % for image only ------------------------------------------------------
     
         % master saliency map
         S = (N(cspMaps.I) + N(cspMaps.C) + N(cspMaps.O)) / 3;
-    
+        S_flicker=zeros(size(S));
     end
-    
+    % fprintf('mean saliency:%f\n',mean(S(:)))
 end
