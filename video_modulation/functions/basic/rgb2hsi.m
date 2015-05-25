@@ -1,6 +1,9 @@
 function [ hsiImage ] = rgb2hsi( rgbImage )
 %RGB2HSI covert image in RGB color space to HSI space
-%        where H is in [0, 2*pi) and both S and L are in [0,1);
+%        where:
+%        H (hue; angle around the central vertical axis), in [0, 2*pi)
+%        S (saturation; distance from the axis), in [0,1) 
+%        L (lightness; perceived luminance), in [0,1);
 %   @author Tao 
 
     %% input

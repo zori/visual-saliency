@@ -1,7 +1,8 @@
 function [ result ] = N( varargin )
 %N map normalisation operator
 %   @author Tao
-    
+
+    % TODO(zori) result is not in [0,1], but in ???
     if iscell(varargin{1})
         imageSet = varargin{1};
     else

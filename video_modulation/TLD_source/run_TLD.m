@@ -10,15 +10,22 @@ init_workspace;
 
 % opt.source          = struct('camera',0,'input','TLD_source/_input/','bb0',[]);
 % opt.sequence_name   = 'city';
-%opt.sequence_name   = 'etdb_foreman_352x288_30';
+opt.sequence_name   = 'etdb_foreman_352x288_30';
+opt.sequence_name   = 'orig_bridge_close_300';
 opt.sequence_name   = 'etdb_HallMonitor_cif_300';
 opt.sequence_name   = 'etdb_HARBOUR_352x288_30_300';
-opt.sequence_name   = 'etdb_MOBILE_352x288_30_300';
 opt.sequence_name   = 'etdb_stefan_cif_90';
 opt.sequence_name   = 'etdb_tempete_cif_260';
-% opt.sequence_name   = 'orig_bridge_close_300';
+opt.sequence_name   = 'etdb_MOBILE_352x288_30_300';
+opt.sequence_name   = 'orig_city_300';
 
-opt.source          = struct('camera',0,'input',fullfile('dataset','video',opt.sequence_name,filesep),'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
+opt.modulation=1;
+opt.smoothing_param_recipr=3; % 3, 7
+
+opt.source          = struct('init_bb_name','init1.txt',... % bounding box file
+    'camera',0,...
+    'input',fullfile('dataset','video',opt.sequence_name,filesep),...
+    'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
 opt.output          = 'TLD_source/_output/'; mkdir(opt.output); % output directory that will contain bounding boxes + confidence
 
 min_win             = 10; % minimal size of the object's bounding box in the scanning grid, it may significantly influence speed of TLD, set it to minimal size of the object

@@ -13,7 +13,7 @@
 %% set parameters
 global param;
 % TODO(zori) Why does he clean the param that he took the trouble to set in
-% experiment?
+% experiment.m?
 param = {};
 % BEGIN zori (copied from experiment.m)
 param.ehcA  = 1/10;
