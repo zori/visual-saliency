@@ -26,7 +26,7 @@ switch size(iBB,2)
     otherwise
         bbd = bb_distance(iBB);
         Z = linkagemex(bbd,'si');
-        T = cluster(Z,'cutoff', SPACE_THR,'criterion','distance');
+        T = cluster_z(Z,'cutoff', SPACE_THR,'criterion','distance');
 end
 
 idx_cluster  = unique(T);

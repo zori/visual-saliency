@@ -1,5 +1,5 @@
 function [ S, S_flicker ] = get_salimap( pyras )
-%GET_MAP Generate sliency map for each give frame
+%GET_MAP Generate sliency map for each given frame
 %   @author Tao
 
     global param;

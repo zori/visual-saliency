@@ -10,8 +10,8 @@ of  = pt1 - pt0;
 dx  = median(of(1,:));
 dy  = median(of(2,:));
 
-d1  = pdist(pt0','euclidean');
-d2  = pdist(pt1','euclidean');
+d1  = pdist_z(pt0','euclidean');
+d2  = pdist_z(pt1','euclidean');
 s   = median(d2./d1);
 
 s1  = 0.5*(s-1)*bb_width(BB0);

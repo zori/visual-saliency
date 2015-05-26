@@ -1,4 +1,5 @@
 *.mexa64
+!video_modulation/functions/pdist_zmex.mexa64
 *.o
 video_modulation/TLD_source/_output/
 " attempts to explore different ROIs for the city sequence; most of them fail to be tracked by TLD

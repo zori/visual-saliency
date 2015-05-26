@@ -70,8 +70,8 @@ function [ ] = set_param( )
         meshgrid(-dogHalfSize : dogHalfSize, -dogHalfSize : dogHalfSize);
     circKernel = kernelX.^2 + kernelY.^2;
     param.dogKernel = ...
-        normpdf(circKernel, 0, dogDelta) - ...
-        normpdf(circKernel, 0, dogK * dogDelta);
+        normpdf_z(circKernel, 0, dogDelta) - ...
+        normpdf_z(circKernel, 0, dogK * dogDelta);
     
     %% fixation simulation
 %     param.foaSqrRadius = 25;
