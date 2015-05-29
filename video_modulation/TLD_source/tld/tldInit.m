@@ -5,7 +5,7 @@
 
 function tld = tldInit(opt,tld)
 
-lk(0);
+lk(0); % Lucas-Kanade from lk.mexa64
 
 if ~isempty(tld);
     handle = tld.handle;

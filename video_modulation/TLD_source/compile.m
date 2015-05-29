@@ -63,11 +63,13 @@ else
     
     % % /usr/include/opencv/
     % /usr/lib/x86_64-linux-gnu/libstdc++.so.6 % for version `GLIBCXX_3.4.20' (required by /usr/lib/x86_64-linux-gnu/libopencv_core.so.2.4)
-    include = ' -I/usr/include/opencv/ -I/usr/include/ '; % -L/usr/lib/x86_64-linux-gnu/libstdc++.so.6 '; %-I/home/zori/sources/OpenCV-2.2.0/include/opencv/'; % -I/usr/include/opencv2/highgui';
-    % include = ' -I/usr/local/include/opencv/ -I/usr/local/include/';
+    % 1. on the DELL (Ubuntu 15.04)
+    % include = ' -I/usr/include/opencv/ -I/usr/include/ '; % -L/usr/lib/x86_64-linux-gnu/libstdc++.so.6 '; %-I/home/zori/sources/OpenCV-2.2.0/include/opencv/'; % -I/usr/include/opencv2/highgui';
+    % libpath = '/usr/lib/x86_64-linux-gnu/';
+    % 2. on the Linux Mint (equivalent to Ubuntu 12.04.5 LTS) desktop (Firenze)
+    include = ' -I/usr/local/include/opencv/ -I/usr/local/include/';
     % % /usr/lib/x86_64-linux-gnu/libopencv_video.so.2.4.9
-    libpath = '/usr/lib/x86_64-linux-gnu/';
-    % libpath = '/usr/local/lib/';
+    libpath = '/usr/local/lib/';
     
     files = dir([libpath 'libopencv*.so']);
     % files = dir([libpath 'libopencv*.so.2.4']);

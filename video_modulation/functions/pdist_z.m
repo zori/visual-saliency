@@ -253,6 +253,9 @@ end
 % and full real double or single data.
 if ~strcmp(dist,'usr') && (isfloat(X) && ~issparse(X)) % ~usr => ~complex
     additionalArg = cast(additionalArg,class(X));
+    % workaround for the precompiled .mex to function as expected on the Linux Mint (Firenze):
+    % cd /usr/local/MATLAB/R2015a/bin/glnxa64  % here should be the file libmwstats_res.so
+    % ln -s /usr/local/MATLAB/MATLAB_Compiler_Runtime/v80/bin/glnxa64/libmwstats_res.so .
     Y = pdist_zmex(X',dist,additionalArg);
     
     % This M equivalent assumes real single or double.  It is currently only
