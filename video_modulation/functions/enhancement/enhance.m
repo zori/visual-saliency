@@ -1,4 +1,4 @@
-function [ frm ] = enhance( frm, diffs, mask, W )
+function [ frame_out ] = enhance( frame_in, diffs, mask, W )
 %ENHANCE enhance frame based on given weights
 %   @author Tao
 
@@ -19,8 +19,9 @@ function [ frm ] = enhance( frm, diffs, mask, W )
     ehcBY = weightedEhc(:,:,5).*mask - weightedEhc(:,:,6).*invMask;
     [ehcH, ehcS] = RGBY2pol(ehcRG, ehcBY);
 
-    % vector adddtion
-    hsi = rgb2hsi(frm);
+    % TODO(zori) compare with boost_HSI.m
+    % vector addition
+    hsi = rgb2hsi(frame_in);
     [befX, befY] = pol2cart(hsi(:,:,1), hsi(:,:,2));
     [ehcX, ehcY] = pol2cart(ehcH, ehcS);
     [aftHue, aftSat] = cart2pol(befX + ehcX, befY + ehcY);
@@ -30,6 +31,6 @@ function [ frm ] = enhance( frm, diffs, mask, W )
     hsi(:,:,1) = mod(aftHue, 2*pi);
     hsi(:,:,2) = max(min(aftSat, 1), 0);
     hsi(:,:,3) = max(min(aftInt, 1), 0);
-    frm = hsi2rgb(hsi);      
+    frame_out = hsi2rgb(hsi);      
     
 end

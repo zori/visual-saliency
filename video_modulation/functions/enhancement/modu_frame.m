@@ -1,12 +1,12 @@
-function [ edtFrm, W ] = modu_frame( srcFrm, diffs, mask, W, lastPyrasAft )
+function [ frame_out, W ] = modu_frame( frame_in, diffs, mask, W, lastPyrasAft )
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
     
     global param;
 
     % pre-enhance
-    edtFrm = enhance(srcFrm, diffs, mask, W);
-    pyrasAft = make_pyras(edtFrm, lastPyrasAft);
+    frame_enhanced = enhance(frame_in, diffs, mask, W);
+    pyrasAft = make_pyras(frame_enhanced, lastPyrasAft);
     SAft = simple_n(enlarge(get_salimap(pyrasAft)));
     
     % prepare ehcA
@@ -17,9 +17,8 @@ function [ edtFrm, W ] = modu_frame( srcFrm, diffs, mask, W, lastPyrasAft )
     
     % get weights
     maskPyra = gauss_pyra(mask);
-    [edtFrm, deltaW] = boost_HSI(edtFrm, diffs, maskPyra);
+    [frame_out, deltaW] = boost_HSI(frame_enhanced, diffs, maskPyra);
     
     % updating of W
     W = W + deltaW;
-
 end

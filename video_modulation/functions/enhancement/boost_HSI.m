@@ -1,10 +1,8 @@
-function [ editedImg, dW ] = boost_HSI( img, diffs, maskPyra )
+function [ frame_out, dW ] = boost_HSI( frame_in, diffs, maskPyra )
 %BOOST_HSI boost saliency in HSI space according to enhancement maps 
 %   @author Tao
 
     global param;
-    
-    hsi = rgb2hsi(img);
     
     % ehc maps
     [ehc.I,   IwMat] = get_enhance(diffs(:,1), maskPyra);
@@ -13,7 +11,9 @@ function [ editedImg, dW ] = boost_HSI( img, diffs, maskPyra )
     [ehc.H , ehc.S] = RGBY2pol(ehc.RG * param.ehcBc, ehc.BY * param.ehcBc);
     dW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc];
     
+    % TODO(zori) compare with enhance.m
     % vector addition
+    hsi = rgb2hsi(frame_in);
     [befX, befY] = pol2cart(hsi(:,:,1), hsi(:,:,2));
     [ehcX, ehcY] = pol2cart(ehc.H, ehc.S);
     [aftHue, aftSat] = cart2pol(befX + ehcX, befY + ehcY);
@@ -23,6 +23,6 @@ function [ editedImg, dW ] = boost_HSI( img, diffs, maskPyra )
     hsi(:,:,1) = mod(aftHue, 2*pi);
     hsi(:,:,2) = max(min(aftSat, 1), 0);
     hsi(:,:,3) = max(min(aftInt, 1), 0);
-    editedImg = hsi2rgb(hsi);
+    frame_out = hsi2rgb(hsi);
 
 end

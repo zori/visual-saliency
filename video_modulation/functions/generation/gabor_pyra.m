@@ -6,7 +6,7 @@ function [ pyramid ] = gabor_pyra( G_n )
 %                and Rotation Invariance (Greenspan et.al 1994)
 %
 %   To be compatible with operation for gaussian pyramids, every scale here
-%   is 1 scale lower than them in model proposed in the paper aobve
+%   is 1 scale lower than them in model proposed in the paper above
 %   so scale 0 doesn't exist, and each other scale is at the same
 %   resolution of the guassian pyramid.
 
