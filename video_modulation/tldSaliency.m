@@ -336,26 +336,23 @@ global param;
 input_img = flash.frm{1};
 switch modulation_type
     case 1
-        meanW = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION);
-        % TODO(zori): FIX bug here input and output the same!!!
-        output_img = input_img; % first time over i > 5 (when i==6), |editedFrame| would be the modulated 006.png
+        meanW = W(:,:,2); % just get the last weights, no averaging; will result in flicker
     case 2
         meanW = mean(W, 3);
         % or, equivalently:
         % same as case 3, only alpha is a vector of length param.wSpan
         % with values 1/(param.wSpan)
-        output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW); % ... and this will be 002.png and it's 'enhanced' version % TODO(zori): when do we output 001.png?
     case 3
-        ww = reshape(W, param.nEhcMaps*param.MAGICAL_DIMENSION, param.wSpan);
+        ww = reshape(W, param.nEhcMaps * param.MAGICAL_DIMENSION, param.wSpan);
         % TODO(zori) get the alpha, make sure it is set only once, and the
         % smoothing param is available for the name of the video in the
         % beginning
         res = ww * alpha;
         meanW = reshape(res, param.nEhcMaps, param.MAGICAL_DIMENSION);
-        output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
     otherwise
         error('wrong modulation value');
 end
+output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
 [weights, weightsIdx] = update_weights(weights, weightsIdx, meanW);
 end
 
