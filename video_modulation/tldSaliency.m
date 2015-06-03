@@ -68,13 +68,13 @@ end
 
 % some other initializations
 % TODO(zori) where is the "magical 6" taken from
-MAGICAL_DIMENSION = 6;
-W = zeros(param.nEhcMaps, MAGICAL_DIMENSION, param.wSpan);
-smoothing_param = 1/opt.smoothing_param_recipr; % exponential smoothing param; in (0,1]
+param.MAGICAL_DIMENSION = 6;
+W = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION, param.wSpan);
+smoothing_param = 1 / opt.smoothing_param_recipr; % exponential smoothing param; in (0,1]
 fprintf('\nsmoothing param recipr: %s; smoothing param: %f\n', num2str(opt.smoothing_param_recipr), smoothing_param);
-alpha = ones(param.wSpan,1).*smoothing_param;
+alpha = ones(param.wSpan,1) .* smoothing_param;
 for k = 2:param.wSpan
-    alpha(k:end) = alpha(k:end).*(1-smoothing_param);
+    alpha(k:end) = alpha(k:end) .* (1 - smoothing_param);
 end
 % for smoothing_param = 1/3:
 % alpha: 0.3333    0.2222    0.1481    0.0988    0.0658    0.0439    0.0293    0.0195    0.0130
@@ -94,7 +94,7 @@ flash.diffs = cell(param.flashL, 1);
 flash.mask  = cell(param.flashL, 1);
 flash.curBB = cell(param.flashL, 1);
 
-weights = zeros(param.nEhcMaps, MAGICAL_DIMENSION, param.nFrames);
+weights = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION, param.nFrames);
 weightsIdx = 1;
 
 % writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
@@ -220,61 +220,23 @@ for i = 2:length(tld.source.idx) % for every frame
     end
     
     if i == param.flashL
-        input_img = flash.frm{1};
-        switch opt.modulation
-            case 1
-                meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
-                output_img = input_img;
-            case 2
-                meanW = mean(W, 3);
-                % or, equivalently:
-                % same as case 3, only alpha is a vector of length param.wSpan
-                % with values 1/(param.wSpan)
-                output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
-            case 3
-                ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
-                res=ww*alpha;
-                meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
-                output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
-            otherwise
-                error('wrong modulation value');
-        end
+        [input_img, output_img, meanW, weights, weightsIdx] = modulate_frame(opt.modulation, flash, W, weights, weightsIdx);
+
         if TO_VISUALIZE
             visualHandles = init_visual(fig_h, input_img, output_img, [], [], meanW, ...
                 flash.curBB{1});
         end
         % SAft = simple_n(enlarge(get_salimap(pyrasAft)));
         
-        weights(:,:,weightsIdx) = meanW;
-        weightsIdx = weightsIdx + 1;
         
     elseif i > param.flashL
-        input_img = flash.frm{1};
-        switch opt.modulation
-            case 1
-                meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
-                output_img = input_img; % first time over i > 5 (when i==6), |editedFrame| would be the modulated 006.png
-            case 2
-                meanW = mean(W, 3);
-                % or, equivalently:
-                % same as case 3, only alpha is a vector of length param.wSpan
-                % with values 1/(param.wSpan)
-                output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW); % ... and this will be 002.png and it's 'enhanced' version % TODO(zori): when do we output 001.png?
-            case 3
-                ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
-                res=ww*alpha;
-                meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
-                output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
-            otherwise
-                error('wrong modulation value');
-        end
-        write_videos(video_writers, output_img, SBef, S_flicker);
+        [input_img, output_img, meanW, weights, weightsIdx] = modulate_frame(opt.modulation, flash, W, weights, weightsIdx);
+
         if TO_VISUALIZE
             visualHandles = visualize(fig_h, input_img, output_img, [], [], meanW, ...
                 flash.curBB{1}, visualHandles);
         end
-        weights(:,:,weightsIdx) = meanW;
-        weightsIdx = weightsIdx + 1;
+        write_videos(video_writers, output_img, SBef, S_flicker);
     end
     
     %---SALIENCY-END---
@@ -312,32 +274,13 @@ end
 for i = 1:param.flashL
     [flash, W] = shift_storage(flash, W);
     
-    input_img = flash.frm{1};
-    switch opt.modulation
-        case 1
-            meanW = zeros(param.nEhcMaps, MAGICAL_DIMENSION);
-            output_img = input_img;
-        case 2
-            meanW = mean(W, 3);
-            % or, equivalently:
-            % same as case 3, only alpha is a vector of length param.wSpan
-            % with values 1/(param.wSpan)
-            output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
-        case 3
-            ww=reshape(W, param.nEhcMaps*MAGICAL_DIMENSION, param.wSpan);
-            res=ww*alpha;
-            meanW=reshape(res, param.nEhcMaps, MAGICAL_DIMENSION);
-            output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
-        otherwise
-            error('wrong modulation value');
-    end
-    write_videos(video_writers, output_img, SBef, S_flicker);
+    [input_img, output_img, meanW, weights, weightsIdx] = modulate_frame(opt.modulation, flash, W, weights, weightsIdx);
+
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, input_img, output_img, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
     end
-    weights(:,:,weightsIdx) = meanW;
-    weightsIdx = weightsIdx + 1;
+    write_videos(video_writers, output_img, SBef, S_flicker);
 end
 
 on_finish(video_writers);
@@ -385,6 +328,41 @@ flash.frm   = circshift(flash.frm,   1);
 flash.diffs = circshift(flash.diffs, 1);
 flash.mask  = circshift(flash.mask,  1);
 flash.curBB = circshift(flash.curBB, 1);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [input_img, output_img, meanW, weights, weightsIdx] = modulate_frame(modulation_type, flash, W, weights, weightsIdx)
+global param;
+input_img = flash.frm{1};
+switch modulation_type
+    case 1
+        meanW = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION);
+        % TODO(zori): FIX bug here input and output the same!!!
+        output_img = input_img; % first time over i > 5 (when i==6), |editedFrame| would be the modulated 006.png
+    case 2
+        meanW = mean(W, 3);
+        % or, equivalently:
+        % same as case 3, only alpha is a vector of length param.wSpan
+        % with values 1/(param.wSpan)
+        output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW); % ... and this will be 002.png and it's 'enhanced' version % TODO(zori): when do we output 001.png?
+    case 3
+        ww = reshape(W, param.nEhcMaps*param.MAGICAL_DIMENSION, param.wSpan);
+        % TODO(zori) get the alpha, make sure it is set only once, and the
+        % smoothing param is available for the name of the video in the
+        % beginning
+        res = ww * alpha;
+        meanW = reshape(res, param.nEhcMaps, param.MAGICAL_DIMENSION);
+        output_img = enhance(input_img, flash.diffs{1}, flash.mask{1}, meanW);
+    otherwise
+        error('wrong modulation value');
+end
+[weights, weightsIdx] = update_weights(weights, weightsIdx, meanW);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [weights, weightsIdx] = update_weights(weights, weightsIdx, meanW)
+weights(:,:,weightsIdx) = meanW;
+weightsIdx = weightsIdx + 1;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
