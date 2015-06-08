@@ -69,7 +69,7 @@ function [ S, S_flicker ] = get_salimap( pyras )
     
         % master saliency map
         S = (N(cspMaps.I) + N(cspMaps.C) + N(cspMaps.O)) / 3;
-        S_flicker=zeros(size(S));
+        S_flicker = zeros(size(S));
     end
     % fprintf('mean saliency:%f\n',mean(S(:)))
 end
