@@ -3,26 +3,24 @@
 % This file is part of TLD.
 %
 
-
-
-% addpath(genpath('.')); 
 init_workspace;
 
-% opt.source          = struct('camera',0,'input','TLD_source/_input/','bb0',[]);
-% opt.sequence_name   = 'city';
-opt.sequence_name   = 'etdb_foreman_352x288_30';
-opt.sequence_name   = 'orig_bridge_close_300';
-opt.sequence_name   = 'etdb_HallMonitor_cif_300';
-opt.sequence_name   = 'etdb_HARBOUR_352x288_30_300';
-opt.sequence_name   = 'etdb_stefan_cif_90';
-opt.sequence_name   = 'etdb_tempete_cif_260';
+% opt.sequence_name   = 'etdb_foreman_352x288_30';
+% opt.sequence_name   = 'orig_bridge_close_300';
+% opt.sequence_name   = 'etdb_HallMonitor_cif_300';
+% opt.sequence_name   = 'etdb_HARBOUR_352x288_30_300';
+% opt.sequence_name   = 'etdb_stefan_cif_90';
+% opt.sequence_name   = 'etdb_tempete_cif_260';
+
+% EDIT(zori) I will only work with these two sequences, as ROIs can be chosen so
+% that the tracker doesn't lose the object until the end of the video.
 opt.sequence_name   = 'etdb_MOBILE_352x288_30_300';
 opt.sequence_name   = 'orig_city_300';
 
-opt.modulation=1;
-opt.smoothing_param_recipr=3; % 3, 7
+opt.modulation = 1; % 1 - no smoothing, 2 - simple averaging within a 6-frame window, or 3 - exponential smoothing
+opt.smoothing_param_recipr = 3; % 3, 7
 
-opt.source          = struct('init_bb_name','init1.txt',... % bounding box file
+opt.source          = struct('init_bb_name','init2.txt',... % bounding box file
     'camera',0,...
     'input',fullfile('dataset','video',opt.sequence_name,filesep),...
     'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)

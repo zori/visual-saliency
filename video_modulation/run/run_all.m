@@ -3,22 +3,21 @@
 % 8.5.0.197613 (R2015a)
 % based on run_TLD
 
-sequence_names={
-    'etdb_HallMonitor_cif_300',...
-    'etdb_HARBOUR_352x288_30_300',...
-    'etdb_MOBILE_352x288_30_300',...
-    'etdb_stefan_cif_90',...
-    'etdb_tempete_cif_260',...
-    'orig_bridge_close_300',...
-    'orig_city_300',...
-    };
+% sequence_names={
+%     'etdb_HallMonitor_cif_300',...
+%     'etdb_HARBOUR_352x288_30_300',...
+%     'etdb_MOBILE_352x288_30_300',...
+%     'etdb_stefan_cif_90',...
+%     'etdb_tempete_cif_260',...
+%     'orig_bridge_close_300',...
+%     'orig_city_300',...
+%     };
 
+% EDIT(zori) I will only work with these two sequences, as ROIs can be chosen so
+% that the tracker doesn't lose the object until the end of the video.
 sequence_names={
-    'orig_city_300',... % init1 (tower_bell_orig); init2 (init_1C - main building part)
-    };
-
-sequence_names={
-    'etdb_MOBILE_352x288_30_300',...
+    'orig_city_300',... % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
+    'etdb_MOBILE_352x288_30_300',... % init1 (pigs; larger); init2 (yellow goat head; smaller)
     };
 
 % three modulation options:
@@ -27,9 +26,11 @@ sequence_names={
 % 3) exponential smoothing with smoothing weight alpha
 modulation=struct('m',{1,2,3,3},'s',{NaN, NaN,3,7});
 
-initial_regions={'init1.txt','init2.txt'}; % bounding box file
-initial_regions={'init2.txt'};
-initial_regions={'init1.txt'};
+% file with initial bounding box (ROI)
+% initial_regions={'init1.txt'};
+% initial_regions={'init2.txt'};
+initial_regions={'init1.txt','init2.txt'};
+
 for ir=1:length(initial_regions)
     init_workspace;
     % opt=struct;
