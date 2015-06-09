@@ -163,14 +163,9 @@ pyrasBef = make_pyras(curFrame);
 diffs = make_diffs(pyrasBef);
 
 % make mask
-% SBef = simple_n(enlarge(get_salimap(pyrasBef)));
-[SBef, S_flicker] = get_salimap(pyrasBef);
-[writable_imgs{6}, writable_imgs{7}] = process_saliency(SBef, S_flicker);
-% fprintf('#1 mean saliency (normalised, upscaled):%f\n',mean(SBef(:)));
-% fprintf('#1 mean flicker saliency (as is):%f\n',mean(S_flicker(:)));
-
 saliency_flicker_writers{2}.avg = zeros(length(tld.source.idx), 1);
-saliency_flicker_writers{2}.avg(1) = mean(writable_imgs{7}(:));
+[writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
+    pyras2saliency(pyrasBef);
 mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 
 % do enhancement
@@ -182,12 +177,11 @@ mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 
 % preparation for next frame
 % re-generation of pyras
+saliency_flicker_writers{1}.avg = zeros(length(tld.source.idx), 1);
 pyrasAft = make_pyras(editedFrame);
 pyras_modulated = pyrasAft;
-[s_modulated, s_flicker_modulated] = get_salimap(pyras_modulated);
-[writable_imgs{2}, writable_imgs{3}] = process_saliency(s_modulated, s_flicker_modulated);
-saliency_flicker_writers{1}.avg = zeros(length(tld.source.idx), 1);
-saliency_flicker_writers{1}.avg(1) = mean(writable_imgs{3}(:));
+[writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1)] = ...
+    pyras2saliency(pyras_modulated);
 % calculate gamma
 rgbDiff = abs(editedFrame - curFrame);
 gamma = (1 - mean(rgbDiff(:)));
@@ -219,12 +213,8 @@ for i = 2:length(tld.source.idx) % for every frame
         diffs = make_diffs(pyrasBef);
         
         % make mask
-        % SBef = simple_n(enlarge(get_salimap(pyrasBef)));
-        [SBef, S_flicker] = get_salimap(pyrasBef); % TODO(zori) this is flicker BEFORE; would be the same regardless of the modulation type
-        [writable_imgs{6}, writable_imgs{7}] = process_saliency(SBef, S_flicker);
-        %         fprintf('#2 mean saliency (normalised, upscaled):%f\n',mean(SBef(:)));
-        %         fprintf('#2 mean flicker saliency (as is):%f\n',mean(S_flicker(:)));
-        saliency_flicker_writers{2}.avg(i) = mean(writable_imgs{7}(:));
+        [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
+            pyras2saliency(pyrasBef);
         mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 
         % do enhancement
@@ -268,9 +258,8 @@ for i = 2:length(tld.source.idx) % for every frame
                 flash.curBB{1}, visualHandles);
         end
         pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-        [s_modulated, s_flicker_modulated] = get_salimap(pyras_modulated);
-        [writable_imgs{2}, writable_imgs{3}] = process_saliency(s_modulated, s_flicker_modulated);
-        saliency_flicker_writers{1}.avg(i) = mean(writable_imgs{3}(:));
+        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+            pyras2saliency(pyras_modulated);
         if param.write_orig, writable_imgs{5} = input_img; end
         write_videos(video_writers, writable_imgs);
     end
@@ -312,14 +301,20 @@ for i = 1:param.flashL
     
     [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
 
+    % TODO(zori) 2015-06-09 check if this is the write way to record last few
+    % frames original videos' statistics
+    pyrasBef = make_pyras(input_img, pyrasBef);
+    [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
+        pyras2saliency(pyrasBef);
+
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
     end
     pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-    [s_modulated, s_flicker_modulated] = get_salimap(pyras_modulated);
-    [writable_imgs{2}, writable_imgs{3}] = process_saliency(s_modulated, s_flicker_modulated);
-    saliency_flicker_writers{1}.avg(i) = mean(writable_imgs{3}(:));
+    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+        pyras2saliency(pyras_modulated);
+    
     if param.write_orig, writable_imgs{5} = input_img; end
     write_videos(video_writers, writable_imgs);
 end
@@ -358,7 +353,14 @@ for k=1:nargin
     varargout{k} = simple_n(enlarge(varargin{k}));
 end
 end
-        
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [saliency, saliency_flicker, avg] = pyras2saliency(pyras)
+[saliency, saliency_flicker] = get_salimap(pyras);
+[saliency, saliency_flicker] = process_saliency(saliency, saliency_flicker);
+avg = mean(saliency_flicker(:));
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB)
 % flash storage
