@@ -451,7 +451,8 @@ for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
-    dlmwrite(saliency_flicker_writers{k}.txt, mean(saliency_flicker_writers{k}.avg), 'delimiter', ' ');
+    avg = saliency_flicker_writers{k}.avg;
+    dlmwrite(saliency_flicker_writers{k}.txt, [mean(avg) std(avg)], 'delimiter', ' ');
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');
 end
