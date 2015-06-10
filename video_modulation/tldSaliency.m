@@ -216,7 +216,7 @@ for i = 2:length(tld.source.idx) % for every frame
         [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
             pyras2saliency(pyrasBef);
         mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
-
+        
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
             modu_frame(curFrame, diffs, mask, W(:,:,2)*gamma, lastPyrasAft);
@@ -236,14 +236,14 @@ for i = 2:length(tld.source.idx) % for every frame
     
     if i == param.flashL
         [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
-
+        
         if TO_VISUALIZE
             % % save the image of first frame with the bounding box in the
             % % original video's folder (only once)
             % ff = figure('visible', 'off'); imshow(input_img, 'Border', 'tight');
             % BB = flash.curBB{1}; rectangle('Position', [BB(1) BB(2) BB(3)-BB(1) BB(4)-BB(2)], 'LineWidth', 4, 'EdgeColor', 'y');
             % print(ff, '-r80', '-djpeg', fullfile(source.input, [opt.source.init_bb_name(1:end-4) '.jpg']));
-
+            
             visualHandles = init_visual(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1});
         end
@@ -252,7 +252,7 @@ for i = 2:length(tld.source.idx) % for every frame
         
     elseif i > param.flashL
         [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
-
+        
         if TO_VISUALIZE
             visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1}, visualHandles);
@@ -300,13 +300,13 @@ for i = 1:param.flashL
     [flash, W] = shift_storage(flash, W);
     
     [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
-
+    
     % TODO(zori) 2015-06-09 check if this is the write way to record last few
     % frames original videos' statistics
     pyrasBef = make_pyras(input_img, pyrasBef);
     [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
         pyras2saliency(pyrasBef);
-
+    
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
@@ -415,12 +415,39 @@ end
 function write_videos(video_writers, writable_imgs)
 global param;
 assert(length(video_writers) == param.n_output_videos);
+writable_imgs = saliency_flicker_visualise(writable_imgs);
 for k = 1:param.n_batches
     l = (k-1) * param.n_videos_in_batch + 2;
     stitched = stitch_outputs(writable_imgs{l-1}, writable_imgs{l}, writable_imgs{l+1}); % stitch the three images together
     writable_imgs{k * param.n_videos_in_batch} = stitched; % the big video containing all channels
 end
 write_videos_do(video_writers, writable_imgs);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function writable_imgs = saliency_flicker_visualise(writable_imgs)
+% writable_imgs{3} is the modulated flicker saliency
+% writable_imgs{7} is the original video flicker saliency (before modulation)
+% for better viewing, subtract from the modulated the original, and depict:
+%   red pixel: positive value (i.e, modulated value is higher),
+%   white pixel: 0 (no difference),
+%   blue pixel: negative value (i.e, modulated value is lower),
+%
+% R = v .* (v > 0)
+% G = 0
+% B = (-v) .* (v < 0)
+saliency_flicker_diff = writable_imgs{3} - writable_imgs{7};
+[r, c] = size(saliency_flicker_diff);
+equal_values = ones(r, c) .* (abs(saliency_flicker_diff) < eps);
+% % for testing:
+% equal_values(24300:24940)=1; im(equal_values);
+equal_values_3D = repmat(equal_values, [1, 1, 3]);
+diff_values = cat(3, saliency_flicker_diff .* (saliency_flicker_diff > 0),...
+    zeros(r, c),...
+    -saliency_flicker_diff .* (saliency_flicker_diff < 0));
+saliency_flicker_colour = ~equal_values_3D .* diff_values + equal_values_3D;
+% figure; im(saliency_flicker_colour);
+writable_imgs{3} = saliency_flicker_colour;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -439,8 +466,19 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function stitched = stitch_outputs(output_img, saliency, saliency_flicker)
-% stitch_outputs(output_img,SBef,S_flicker)
-stitched = cat(1, output_img, repmat(saliency, [1 1 3]), repmat(saliency_flicker, [1 1 3]));
+% saliency is greyscale
+% saliency_flicker is greyscale for the original (unmodulated) video, and RGB
+% for the modulated, to ease visualisation
+if ismatrix(saliency_flicker) % greyscale image
+    saliency_flicker_rgb = repmat(saliency_flicker, [1 1 3]);
+else
+    if ndims(saliency_flicker) == 3 % RGB
+        saliency_flicker_rgb = saliency_flicker;
+    else
+        error('invalid saliency_flicker image');
+    end
+end
+stitched = cat(1, output_img, repmat(saliency, [1 1 3]), saliency_flicker_rgb);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
