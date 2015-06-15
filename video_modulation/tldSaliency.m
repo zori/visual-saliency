@@ -200,7 +200,9 @@ for i = 2:length(tld.source.idx) % for every frame
     %%
     %--SALIENCY-BEGIN--
     
-    curFrame = im2double(imread(source.files(i).name));
+    % curFrame = im2double(imread(source.files(i).name));
+    % TODO(zori): sanity check
+    curFrame = im2double(imread(source.files(1).name));
     curBB = [max([1;1], tld.bb(1:2,i)); ...
         min([param.resX;param.resY], tld.bb(3:4,i))];
     
