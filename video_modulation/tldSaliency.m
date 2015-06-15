@@ -164,9 +164,8 @@ diffs = make_diffs(pyrasBef);
 
 % make mask
 saliency_flicker_writers{2}.avg = zeros(length(tld.source.idx), 1);
-[writable_imgs{6}, writable_imgs{7}] = ...
+[writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
     pyras2saliency(pyrasBef);
-saliency_flicker_writers{2}.avg(1) = mean(writable_imgs{7}(:));
 mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 
 % do enhancement
@@ -181,10 +180,8 @@ mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 saliency_flicker_writers{1}.avg = zeros(length(tld.source.idx), 1);
 pyrasAft = make_pyras(editedFrame);
 pyras_modulated = pyrasAft;
-[writable_imgs{2}, writable_imgs{3}] = ...
-    pyras2saliency(pyras_modulated);
-writable_imgs{3} = writable_imgs{3} - writable_imgs{7};
-saliency_flicker_writers{1}.avg(1) = mean(writable_imgs{3}(:));
+[writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1)] = ...
+    pyras2saliency(pyras_modulated, writable_imgs{7});
 % calculate gamma
 rgbDiff = abs(editedFrame - curFrame);
 gamma = (1 - mean(rgbDiff(:)));
@@ -216,9 +213,9 @@ for i = 2:length(tld.source.idx) % for every frame
         diffs = make_diffs(pyrasBef);
         
         % make mask
-        [writable_imgs{6}, writable_imgs{7}] = ...
+        [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
             pyras2saliency(pyrasBef);
-        saliency_flicker_writers{2}.avg(i) = mean(writable_imgs{7}(:));
+        mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
@@ -261,10 +258,8 @@ for i = 2:length(tld.source.idx) % for every frame
                 flash.curBB{1}, visualHandles);
         end
         pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-        [writable_imgs{2}, writable_imgs{3}] = ...
-            pyras2saliency(pyras_modulated);
-        writable_imgs{3} = writable_imgs{3} - writable_imgs{7};
-        saliency_flicker_writers{1}.avg(i) = mean(writable_imgs{3}(:));
+        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+            pyras2saliency(pyras_modulated, writable_imgs{7});
         if param.write_orig, writable_imgs{5} = input_img; end
         write_videos(video_writers, writable_imgs);
     end
@@ -309,20 +304,16 @@ for i = 1:param.flashL
     % TODO(zori) 2015-06-09 check if this is the write way to record last few
     % frames original videos' statistics
     pyrasBef = make_pyras(input_img, pyrasBef);
-    [writable_imgs{6}, writable_imgs{7}] = ...
+    [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
         pyras2saliency(pyrasBef);
-    saliency_flicker_writers{2}.avg(i) = mean(writable_imgs{7}(:));
-    
     
     if TO_VISUALIZE
         visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
     end
     pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-        [writable_imgs{2}, writable_imgs{3}] = ...
-            pyras2saliency(pyras_modulated);
-        writable_imgs{3} = writable_imgs{3} - writable_imgs{7};
-        saliency_flicker_writers{1}.avg(i) = mean(writable_imgs{3}(:));
+    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+        pyras2saliency(pyras_modulated, writable_imgs{7});
     
     if param.write_orig, writable_imgs{5} = input_img; end
     write_videos(video_writers, writable_imgs);
@@ -364,9 +355,17 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [saliency, saliency_flicker] = pyras2saliency(pyras)
+function [saliency, saliency_flicker, avg] = pyras2saliency(pyras, orig_saliency_flicker)
 [saliency, saliency_flicker] = get_salimap(pyras);
 [saliency, saliency_flicker] = process_saliency(saliency, saliency_flicker);
+% in case we have the modulated saliency, the original video's saliency_flicker
+% is passed too; subtract, to only reason about the difference
+if nargin == 2
+    saliency_flicker = saliency_flicker - orig_saliency_flicker;
+end
+% TODO(zori) take absolute values here for the mean and later, the standard
+% deviation
+avg = mean(saliency_flicker(:));
 end
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
