@@ -48,7 +48,7 @@ tld = tldDisplay(0,tld);
 
 %%
 %--SALIENCY-BEGIN--
-
+n_frames = length(tld.source.idx);
 curFrame = im2double(imread(source.files(1).name));
 [param.resY, param.resX, param.nChannel] = size(curFrame);
 set_param;
@@ -62,7 +62,7 @@ if param.nChannel < 3
 elseif min(param.resY, param.resX) < 2^param.pyraScales
     disp('Minimise resolution should be 2^(scale of pyramid).');
     return
-elseif length(tld.source.idx) < param.wSpan
+elseif n_frames < param.wSpan
     disp('Video too short.')
     return
 end
@@ -163,7 +163,7 @@ pyrasBef = make_pyras(curFrame);
 diffs = make_diffs(pyrasBef);
 
 % make mask
-saliency_flicker_writers{2}.avg = zeros(length(tld.source.idx), 1);
+saliency_flicker_writers{2}.avg = zeros(n_frames, 1);
 [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
     pyras2saliency(pyrasBef);
 mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
@@ -177,7 +177,7 @@ mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
 
 % preparation for next frame
 % re-generation of pyras
-saliency_flicker_writers{1}.avg = zeros(length(tld.source.idx), 1);
+saliency_flicker_writers{1}.avg = zeros(n_frames, 1);
 pyrasAft = make_pyras(editedFrame);
 pyras_modulated = pyrasAft;
 [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1)] = ...
@@ -192,8 +192,9 @@ fprintf('\t%f\n', gamma);
 
 % RUN-TIME ----------------------------------------------------------------
 
-for i = 2:length(tld.source.idx) % for every frame
-    
+for k = 2:n_frames % for every frame
+    % i = 2; % TODO(zori): sanity check; always use 002.png
+    i = k;
     tld = tldProcessFrame(tld,i); % process frame i
     % tldDisplay(1,tld,i); % display results on frame i
     
@@ -201,12 +202,12 @@ for i = 2:length(tld.source.idx) % for every frame
     %--SALIENCY-BEGIN--
     
     % curFrame = im2double(imread(source.files(i).name));
-    % TODO(zori): sanity check
-    curFrame = im2double(imread(source.files(1).name));
+    % TODO(zori): sanity check; always use 002.png
+    curFrame = im2double(imread(source.files(i).name));
     curBB = [max([1;1], tld.bb(1:2,i)); ...
         min([param.resX;param.resY], tld.bb(3:4,i))];
     
-    fprintf('%03d', i);
+    fprintf('%03d', k);
     
     if ~isnan(tld.valid(i))
         % prepare pyras and diffs
@@ -215,7 +216,7 @@ for i = 2:length(tld.source.idx) % for every frame
         diffs = make_diffs(pyrasBef);
         
         % make mask
-        [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
+        [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(k)] = ...
             pyras2saliency(pyrasBef);
         mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
         
@@ -236,7 +237,7 @@ for i = 2:length(tld.source.idx) % for every frame
         break;
     end
     
-    if i == param.flashL
+    if k == param.flashL
         [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
         
         if TO_VISUALIZE
@@ -252,7 +253,7 @@ for i = 2:length(tld.source.idx) % for every frame
         % SAft = simple_n(enlarge(get_salimap(pyrasAft)));
         
         
-    elseif i > param.flashL
+    elseif k > param.flashL
         [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
         
         if TO_VISUALIZE
@@ -260,7 +261,7 @@ for i = 2:length(tld.source.idx) % for every frame
                 flash.curBB{1}, visualHandles);
         end
         pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(k)] = ...
             pyras2saliency(pyras_modulated, writable_imgs{7});
         if param.write_orig, writable_imgs{5} = input_img; end
         write_videos(video_writers, writable_imgs);
@@ -290,7 +291,7 @@ for i = 2:length(tld.source.idx) % for every frame
     
     if tld.plot.save == 1 % TODO(zori) where to set that to be also saving the plot?
         img = getframe();
-        imwrite(img.cdata,[tld.output num2str(i,'%05d') '.png']);
+        imwrite(img.cdata,[tld.output num2str(k,'%05d') '.png']);
     end
 end
 
@@ -299,6 +300,7 @@ end
 % TODO(zori) |flash| keeps the last |param.flashL| frames from the sequence
 % TODO(zori) think about the 001.png: first image never gets written; double-check that, fix if possible
 for i = 1:param.flashL
+    ind = i + n_frames - param.flashL;
     [flash, W] = shift_storage(flash, W);
     
     [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
@@ -306,7 +308,7 @@ for i = 1:param.flashL
     % TODO(zori) 2015-06-09 check if this is the write way to record last few
     % frames original videos' statistics
     pyrasBef = make_pyras(input_img, pyrasBef);
-    [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(i)] = ...
+    [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(ind)] = ...
         pyras2saliency(pyrasBef);
     
     if TO_VISUALIZE
@@ -314,7 +316,7 @@ for i = 1:param.flashL
             flash.curBB{1}, visualHandles);
     end
     pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(i)] = ...
+    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(ind)] = ...
         pyras2saliency(pyras_modulated, writable_imgs{7});
     
     if param.write_orig, writable_imgs{5} = input_img; end
