@@ -200,9 +200,6 @@ for k = 2:n_frames % for every frame
     
     %%
     %--SALIENCY-BEGIN--
-    
-    % curFrame = im2double(imread(source.files(i).name));
-    % TODO(zori): sanity check; always use 002.png
     curFrame = im2double(imread(source.files(i).name));
     curBB = [max([1;1], tld.bb(1:2,i)); ...
         min([param.resX;param.resY], tld.bb(3:4,i))];
@@ -297,16 +294,13 @@ end
 
 %%
 %--SALIENCY-BEGIN--
-% TODO(zori) |flash| keeps the last |param.flashL| frames from the sequence
 % TODO(zori) think about the 001.png: first image never gets written; double-check that, fix if possible
-for i = 1:param.flashL
+for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the sequence
     ind = i + n_frames - param.flashL;
     [flash, W] = shift_storage(flash, W);
     
     [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
-    
-    % TODO(zori) 2015-06-09 check if this is the write way to record last few
-    % frames original videos' statistics
+
     pyrasBef = make_pyras(input_img, pyrasBef);
     [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(ind)] = ...
         pyras2saliency(pyrasBef);
@@ -335,7 +329,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handle_q_key(~,evnt)
 global finish;
-% disp(evt.Key)
 if strcmp(evnt.Key,'q')
     finish = 1;
 end
