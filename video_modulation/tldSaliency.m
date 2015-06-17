@@ -360,16 +360,8 @@ function [saliency, saliency_flicker, avg] = pyras2saliency(pyras, orig_saliency
 if nargin == 2
     saliency_flicker = saliency_flicker - orig_saliency_flicker;
 end
-% TODO(zori) take absolute values here for the mean and later, the standard
-% deviation
-avg = mean(saliency_flicker(:));
+avg = mean(abs(saliency_flicker(:))); % absolute difference for the current frame
 end
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [] = saliency_avg(writable_imgs)
-% writable_imgs{3} = writable_imgs{3} - writable_imgs{7};
-% avg = mean(writable_imgs{3}(:));
-% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB)
@@ -499,7 +491,7 @@ for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
-    avg = saliency_flicker_writers{k}.avg;
+    avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg absolute saliency_flicker values per frame
     dlmwrite(saliency_flicker_writers{k}.txt, [mean(avg) std(avg)], 'delimiter', ' ');
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');
