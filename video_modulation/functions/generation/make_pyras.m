@@ -1,5 +1,9 @@
 function [ pyras ] = make_pyras( varargin )
-%MAKE_PYRAS generate pyramids I, RG, BY, O, F, M
+% MAKE_PYRAS generate pyramids at multiple scales:
+% I, R, G, B, Y, - Gaussian pyramids,
+% O, - Gabor pyramids for multiple orientations orientation,
+% F, M (optional, if the lastPyras was an input argument) - flicker and motion,
+% according to Reichardt model.
 %   @author Tao
 
     % decide whether to process single image or sequence
@@ -30,17 +34,17 @@ function [ pyras ] = make_pyras( varargin )
     Y = max((r + g)/2 - abs(r - g)/2 - b, 0);
     
     % pyramids
-    pyras.R = gauss_pyra(R);
-    pyras.G = gauss_pyra(G);
-    pyras.B = gauss_pyra(B);
-    pyras.Y = gauss_pyra(Y);
+    pyras.R = gauss_pyra(R); % red
+    pyras.G = gauss_pyra(G); % green
+    pyras.B = gauss_pyra(B); % blue
+    pyras.Y = gauss_pyra(Y); % yellow
     pyras.I = gauss_pyra(I); % intensity
-    pyras.O = gabor_pyra(I); % orientation TODO(zori) (?)
-    pyras.S = shift_pyra(pyras.O);
+    pyras.O = gabor_pyra(I); % orientation
+    pyras.S = shift_pyra(pyras.O); % shifted orientations, to be used in .F and .M
     
     if nargin > 1
-        pyras.F = gauss_pyra(I - lastPyras.I{1});
-        pyras.M = cellfun(@(a,b,c,d) (abs(a.*b - c.*d)), ...
+        pyras.F = gauss_pyra(I - lastPyras.I{1}); % flicker
+        pyras.M = cellfun(@(a,b,c,d) (abs(a.*b - c.*d)), ... % motion
                           pyras.O, lastPyras.S, lastPyras.O, pyras.S, ...
                           'UniformOutput', false);
     end
