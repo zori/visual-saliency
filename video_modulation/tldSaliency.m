@@ -465,13 +465,17 @@ function saliency_flicker_colour = saliency_flicker_visualise(saliency_flicker_d
 % G = 0
 % B = (-v) .* (v < 0)
 [r, c] = size(saliency_flicker_diff);
+% dynamic range adaptation: make the highest value most red / blue and
+% everything else linearly scaled
+saliency_flicker_diff = simple_n(saliency_flicker_diff) .* 2 - 1;
 equal_values = ones(r, c) .* (abs(saliency_flicker_diff) < eps);
 % % for testing:
 % equal_values(24300:24940)=1; im(equal_values);
 equal_values_3D = repmat(equal_values, [1, 1, 3]);
-diff_values = cat(3, saliency_flicker_diff .* (saliency_flicker_diff > 0),...
-    zeros(r, c),...
-    -saliency_flicker_diff .* (saliency_flicker_diff < 0));
+diff_values = cat(3, ...
+    saliency_flicker_diff .* (saliency_flicker_diff > 0),... % R
+    zeros(r, c),... % G
+    -saliency_flicker_diff .* (saliency_flicker_diff < 0)); % B
 saliency_flicker_colour = ~equal_values_3D .* diff_values + equal_values_3D;
 % figure; im(saliency_flicker_colour);
 end

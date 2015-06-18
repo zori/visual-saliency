@@ -15,6 +15,15 @@
 
 % EDIT(zori) I will only work with these two sequences, as ROIs can be chosen so
 % that the tracker doesn't lose the object until the end of the video.
+
+% sequence_names = {
+%     'orig_city_300',... % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
+%     };
+
+% sequence_names = {
+%     'etdb_MOBILE_352x288_30_300',... % init1 (pigs; larger); init2 (yellow goat head; smaller)
+%     };
+
 sequence_names = {
     'orig_city_300',... % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
     'etdb_MOBILE_352x288_30_300',... % init1 (pigs; larger); init2 (yellow goat head; smaller)
