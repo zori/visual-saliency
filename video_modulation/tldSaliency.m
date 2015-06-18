@@ -352,15 +352,39 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [saliency, saliency_flicker, avg] = pyras2saliency(pyras, orig_saliency_flicker)
+function [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_saliency_flicker)
+% Produces frame saliency statistic based on the current frame's pyramids.
+%
+% USAGE
+%  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras)
+%  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_saliency_flicker)
+%
+% INPUTS
+%  pyras                 - pyramids for the current frame
+%  orig_saliency_flicker - (optional) the saliency flicker of the original
+%                          frame, if this is the modulated one
+%
+% OUTPUTS
+%  saliency              - [h x w] saliency map
+%  saliency_flicker      - [h x w] flicker saliency map: absolute for the
+%                          original frame; difference values for the modulated frame
+%  frame_avg             - average flicker saliency: absolute for the original
+%                          frame; relative to the original for the modulated
+%                          one, indicating the percentage of added flicker
+%                          (undesirable) through the modulation
+
 [saliency, saliency_flicker] = get_salimap(pyras);
 [saliency, saliency_flicker] = process_saliency(saliency, saliency_flicker);
 % in case we have the modulated saliency, the original video's saliency_flicker
 % is passed too; subtract, to only reason about the difference
 if nargin == 2
     saliency_flicker = saliency_flicker - orig_saliency_flicker;
+    orig_frame_avg = mean(orig_saliency_flicker(:));
+    frame_avg = mean(abs(saliency_flicker(:))) ./ (orig_frame_avg + (orig_frame_avg == 0));
+else
+    assert(all(saliency_flicker(:) >= 0));
+    frame_avg = mean(saliency_flicker(:));
 end
-avg = mean(abs(saliency_flicker(:))); % absolute difference for the current frame
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -491,8 +515,8 @@ for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
-    avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg absolute saliency_flicker values per frame
-    dlmwrite(saliency_flicker_writers{k}.txt, [mean(avg) std(avg)], 'delimiter', ' ');
+    frame_avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg absolute saliency_flicker values per frame
+    dlmwrite(saliency_flicker_writers{k}.txt, [mean(frame_avg) std(frame_avg)], 'delimiter', ',');
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');
 end
