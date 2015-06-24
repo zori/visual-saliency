@@ -1,9 +1,9 @@
 function [ result ] = maxlocal_N( map )
-%N map normalisation operator
+%N map normalisation operator into [0,amplitude]
 %   @author Tao
 
     % normalise to [0,1]
-	map = simple_n(map);
+	map = simple_norm(map);
     
     % get mean of peaks
     argMax = map > imdilate(map, [1 1 1; 1 0 1; 1 1 1]);

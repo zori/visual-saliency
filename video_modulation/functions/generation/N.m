@@ -6,7 +6,6 @@ function [ result ] = N( varargin )
     if iscell(varargin{1})
         imageSet = varargin{1};
     else
-        imageSet = cell(1);
         imageSet{1} = varargin{1};
     end
     

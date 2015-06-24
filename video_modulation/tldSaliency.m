@@ -10,7 +10,6 @@ global tld; % holds results and temporal variables
 % having the figure visible, as the key listener (handleKey) is attached to it
 TO_VISUALIZE = true;
 
-%%
 %--SALIENCY-BEGIN--
 %
 global param;
@@ -19,7 +18,6 @@ param.modulation_type = opt.modulation;
 modulation_type_str = int2str(param.modulation_type);
 fprintf('\nmodulation type: %s\n', modulation_type_str);
 %---SALIENCY-END---
-%%
 
 % INITIALIZATION ----------------------------------------------------------
 
@@ -46,7 +44,6 @@ tld = tldInit(opt,[]);
 % initialize display
 tld = tldDisplay(0,tld);
 
-%%
 %--SALIENCY-BEGIN--
 n_frames = length(tld.source.idx);
 curFrame = im2double(imread(source.files(1).name));
@@ -166,7 +163,8 @@ diffs = make_diffs(pyrasBef);
 saliency_flicker_writers{2}.avg = zeros(n_frames, 1);
 [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
     pyras2saliency(pyrasBef);
-mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
+%%
+mask = simple_norm(get_video_mask(curBB) .* writable_imgs{6});
 
 % do enhancement
 [param.ehcBc, param.ehcBd] = init_betas(curFrame, mask);
@@ -188,7 +186,6 @@ gamma = (1 - mean(rgbDiff(:)));
 fprintf('\t%f\n', gamma);
 
 %---SALIENCY-END---
-%%
 
 % RUN-TIME ----------------------------------------------------------------
 
@@ -198,7 +195,6 @@ for k = 2:n_frames % for every frame
     tld = tldProcessFrame(tld,i); % process frame i
     % tldDisplay(1,tld,i); % display results on frame i
     
-    %%
     %--SALIENCY-BEGIN--
     curFrame = im2double(imread(source.files(i).name));
     curBB = [max([1;1], tld.bb(1:2,i)); ...
@@ -215,7 +211,8 @@ for k = 2:n_frames % for every frame
         % make mask
         [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(k)] = ...
             pyras2saliency(pyrasBef);
-        mask = simple_n(get_video_mask(curBB) .* writable_imgs{6});
+        %%
+        mask = simple_norm(get_video_mask(curBB) .* writable_imgs{6});
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
@@ -247,7 +244,9 @@ for k = 2:n_frames % for every frame
             visualHandles = init_visual(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1});
         end
-        % SAft = simple_n(enlarge(get_salimap(pyrasAft)));
+        % TODO(zori) pyrasAft code repetition? Is this the modulated frame's
+        % pyramids?
+        % SAft = simple_norm(enlarge(get_salimap(pyrasAft)));
         
         
     elseif k > param.flashL
@@ -265,7 +264,6 @@ for k = 2:n_frames % for every frame
     end
     
     %---SALIENCY-END---
-    %%
     
     if finish % finish if any key was pressed
         if tld.source.camera
@@ -275,12 +273,10 @@ for k = 2:n_frames % for every frame
         end
         close(2);
         
-        %%
         %--SALIENCY-BEGIN--
         on_finish(video_writers, saliency_flicker_writers);
         
         %---SALIENCY-END---
-        %%
         
         bb = tld.bb; conf = tld.conf; % return results
         return;
@@ -292,7 +288,6 @@ for k = 2:n_frames % for every frame
     end
 end
 
-%%
 %--SALIENCY-BEGIN--
 % TODO(zori) think about the 001.png: first image never gets written; double-check that, fix if possible
 for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the sequence
@@ -320,7 +315,6 @@ end
 on_finish(video_writers, saliency_flicker_writers);
 
 %---SALIENCY-END---
-%%
 
 bb = tld.bb; conf = tld.conf; % return results
 
@@ -347,7 +341,7 @@ end
 function varargout = process_saliency(varargin)
 varargout = cell(size(varargin));
 for k=1:nargin
-    varargout{k} = simple_n(enlarge(varargin{k}));
+    varargout{k} = simple_norm(enlarge(varargin{k}));
 end
 end
 
@@ -467,7 +461,7 @@ function saliency_flicker_colour = saliency_flicker_visualise(saliency_flicker_d
 [r, c] = size(saliency_flicker_diff);
 % dynamic range adaptation: make the highest value most red / blue and
 % everything else linearly scaled
-saliency_flicker_diff = simple_n(saliency_flicker_diff) .* 2 - 1;
+saliency_flicker_diff = simple_norm(saliency_flicker_diff) .* 2 - 1;
 equal_values = ones(r, c) .* (abs(saliency_flicker_diff) < eps);
 % % for testing:
 % equal_values(24300:24940)=1; im(equal_values);

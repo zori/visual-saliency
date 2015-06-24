@@ -29,7 +29,7 @@ param.moduDelta = [3, 4];
 [param.resY, param.resX, param.nChannel] = size(sourceImage);
 set_param;
 
-%% some bsic data verification
+%% some basic data verification
 if param.nChannel < 3
    disp('Color image expected. Process terminated.');
    return;
@@ -42,7 +42,7 @@ end
 %% saliency map generation for original image
 pyras = make_pyras(sourceImage);
 SBef = get_salimap(pyras);
-SBef = simple_n(enlarge(SBef));
+SBef = simple_norm(enlarge(SBef));
 
 %% saliency boosting
 %  refine mask
@@ -77,7 +77,7 @@ if max(SAftROI(:)) < 1
 
     % re-generation of saliency map
     pyras = make_pyras(editedImage);
-    SAft = simple_n(enlarge(get_salimap(pyras)));
+    SAft = simple_norm(enlarge(get_salimap(pyras)));
     SAftROI = SAft .* logical(mask);
 
     param.ehcBc = (param.ehcBc*(param.ehcKc-1) + 1) / param.ehcKc;

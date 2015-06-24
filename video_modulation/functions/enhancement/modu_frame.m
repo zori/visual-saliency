@@ -7,7 +7,7 @@ function [ frame_out, W ] = modu_frame( frame_in, diffs, mask, W, lastPyrasAft )
     % pre-enhance
     frame_enhanced = enhance(frame_in, diffs, mask, W);
     pyrasAft = make_pyras(frame_enhanced, lastPyrasAft);
-    SAft = simple_n(enlarge(get_salimap(pyrasAft)));
+    SAft = simple_norm(enlarge(get_salimap(pyrasAft)));
     
     % prepare ehcA
     SROI  = SAft(logical(mask));
