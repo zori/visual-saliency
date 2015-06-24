@@ -49,8 +49,7 @@ n_frames = length(tld.source.idx);
 curFrame = im2double(imread(source.files(1).name));
 [param.resY, param.resX, param.nChannel] = size(curFrame);
 set_param;
-curBB = [max([1;1], tld.bb(1:2,1)); ...
-    min([param.resX;param.resY], tld.bb(3:4,1))];
+curBB = get_current_BB(1);
 
 % some basic data verification
 if param.nChannel < 3
@@ -163,9 +162,7 @@ diffs = make_diffs(pyrasBef);
 saliency_flicker_writers{2}.avg = zeros(n_frames, 1);
 [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
     pyras2saliency(pyrasBef);
-%%
-mask = simple_norm(get_video_mask(curBB) .* writable_imgs{6});
-
+mask = get_mask(curBB, writable_imgs{6});
 % do enhancement
 [param.ehcBc, param.ehcBd] = init_betas(curFrame, mask);
 % TODO(zori) figure out how modu_1st_frame is different from modu_frame and if I can merge them
@@ -197,8 +194,7 @@ for k = 2:n_frames % for every frame
     
     %--SALIENCY-BEGIN--
     curFrame = im2double(imread(source.files(i).name));
-    curBB = [max([1;1], tld.bb(1:2,i)); ...
-        min([param.resX;param.resY], tld.bb(3:4,i))];
+    curBB = get_current_BB(i);
     
     fprintf('%03d', k);
     
@@ -211,8 +207,7 @@ for k = 2:n_frames % for every frame
         % make mask
         [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(k)] = ...
             pyras2saliency(pyrasBef);
-        %%
-        mask = simple_norm(get_video_mask(curBB) .* writable_imgs{6});
+        mask = get_mask(curBB, writable_imgs{6});
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
@@ -244,7 +239,7 @@ for k = 2:n_frames % for every frame
             visualHandles = init_visual(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1});
         end
-        % TODO(zori) pyrasAft code repetition? Is this the modulated frame's
+        %% TODO(zori) pyrasAft code repetition? Is this the modulated frame's
         % pyramids?
         % SAft = simple_norm(enlarge(get_salimap(pyrasAft)));
         
@@ -318,6 +313,19 @@ on_finish(video_writers, saliency_flicker_writers);
 
 bb = tld.bb; conf = tld.conf; % return results
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function current_BB = get_current_BB(ind)
+global tld;
+global param;
+current_BB = [max([1;1], tld.bb(1:2,ind)); ...
+    min([param.resX;param.resY], tld.bb(3:4,ind))];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function mask = get_mask(current_BB, saliency)
+mask = simple_norm(get_video_mask(current_BB) .* saliency);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
