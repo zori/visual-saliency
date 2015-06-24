@@ -156,6 +156,10 @@ fprintf('001');
 
 % prepare pyras and diff maps
 pyrasBef = make_pyras(curFrame);
+% diffs - [param.nEhcMaps x 3] cell of difference maps
+%         first column: I
+%         second column: R and G
+%         third column: B and Y
 diffs = make_diffs(pyrasBef);
 
 % make mask

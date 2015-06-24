@@ -1,4 +1,4 @@
-function [ frame_out, dW ] = boost_HSI( frame_in, diffs, maskPyra )
+function [ frame_out, deltaW ] = boost_HSI( frame_in, diffs, maskPyra )
 %BOOST_HSI boost saliency in HSI space according to enhancement maps 
 %   @author Tao
 
@@ -9,7 +9,7 @@ function [ frame_out, dW ] = boost_HSI( frame_in, diffs, maskPyra )
     [ehc.RG, RGwMat] = get_enhance(diffs(:,2), maskPyra);
     [ehc.BY, BYwMat] = get_enhance(diffs(:,3), maskPyra);
     [ehc.H , ehc.S] = RGBY2pol(ehc.RG * param.ehcBc, ehc.BY * param.ehcBc);
-    dW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc];
+    deltaW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc];
     
     % TODO(zori) compare with enhance.m
     % vector addition
@@ -20,6 +20,7 @@ function [ frame_out, dW ] = boost_HSI( frame_in, diffs, maskPyra )
     aftInt = hsi(:,:,3) + ehc.I;
     
     % output
+    % TODO(zori) out-of-range values get cropped; is that ok?
     hsi(:,:,1) = mod(aftHue, 2*pi);
     hsi(:,:,2) = max(min(aftSat, 1), 0);
     hsi(:,:,3) = max(min(aftInt, 1), 0);

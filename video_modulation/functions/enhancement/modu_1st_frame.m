@@ -1,5 +1,5 @@
-function [ frame_out, deltaW ] = modu_1st_frame( frame_in, diffs, mask, SBef )
-%MODU_1ST_FRAME modulation of 1st frame, with updated W returned
+function [ frame_out, W ] = modu_1st_frame( frame_in, diffs, mask, SBef )
+%MODU_1ST_FRAME modulation of 1st frame, with weight W returned
 %   @author Tao
 
     global param;
@@ -12,5 +12,5 @@ function [ frame_out, deltaW ] = modu_1st_frame( frame_in, diffs, mask, SBef )
     
     % get weights
     maskPyra = gauss_pyra(mask);
-    [frame_out, deltaW] = boost_HSI(frame_in, diffs, maskPyra);
+    [frame_out, W] = boost_HSI(frame_in, diffs, maskPyra);
 end
