@@ -1,5 +1,5 @@
 function [ frame_out ] = enhance( frame_in, diffs, mask, W )
-%ENHANCE enhance frame based on given weights
+%ENHANCE enhance frame based on given (precomputed) weights
 %   @author Tao
 
     global param;

@@ -231,7 +231,7 @@ for k = 2:n_frames % for every frame
     end
     
     if k == param.flashL
-        [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
+        [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx);
         
         if TO_VISUALIZE
             % % save the image of first frame with the bounding box in the
@@ -243,13 +243,12 @@ for k = 2:n_frames % for every frame
             visualHandles = init_visual(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1});
         end
-        %% TODO(zori) pyrasAft code repetition? Is this the modulated frame's
+        % TODO(zori) pyrasAft code repetition? Is this the modulated frame's
         % pyramids?
         % SAft = simple_norm(enlarge(get_salimap(pyrasAft)));
-        
-        
+
     elseif k > param.flashL
-        [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
+        [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx);
         
         if TO_VISUALIZE
             visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
@@ -293,7 +292,7 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
     ind = i + n_frames - param.flashL;
     [flash, W] = shift_storage(flash, W);
     
-    [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx);
+    [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx);
 
     pyrasBef = make_pyras(input_img, pyrasBef);
     [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(ind)] = ...
@@ -414,7 +413,7 @@ flash.curBB = circshift(flash.curBB, 1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [input_img, output_img, meanW, weights, weightsIdx] = modulate_frame(flash, W, weights, weightsIdx)
+function [input_img, output_img, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx)
 global param;
 input_img = flash.frm{1};
 switch param.modulation_type

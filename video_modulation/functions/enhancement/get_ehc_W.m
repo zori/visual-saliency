@@ -1,4 +1,4 @@
-function [ ehc, wMat ] = get_enhance( diff, maskPyra )
+function [ ehc, wMat ] = get_ehc_W( diff, maskPyra )
 %GET_ENHANCE produce an enhacement map from given feature maps
 %            within the grayscale mask
 % INPUTS
