@@ -5,7 +5,7 @@ function [ frame_out ] = enhance( frame_in, diffs, mask, W )
     global param;
 
     % difference maps weighted combination
-    diffCell = cell(param.nEhcMaps, 6);
+    diffCell = cell(param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM);
     diffCell(:, [1 3 5]) = diffs;
     diffCell(:, [2 4 6]) = diffs;
     weightedDiff = ...

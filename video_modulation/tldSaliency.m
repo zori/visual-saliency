@@ -67,7 +67,8 @@ end
 
 % these are 3 pairs of (roi_weight, bkg_weight); see get_ehc_W() and boost_HSI()
 % the 3 channels are: I, RG, and BY
-param.CHANNEL_WEIGHTS_DIM = 6;
+param.N_DIFF_CHANNELS = 3;
+param.CHANNEL_WEIGHTS_DIM = 2 * param.N_DIFF_CHANNELS;
 W = zeros(param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM, param.wSpan);
 
 flash = {};

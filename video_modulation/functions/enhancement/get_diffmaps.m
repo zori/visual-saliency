@@ -1,4 +1,4 @@
-function [ diff ] = get_diffmaps( varargin )
+function [ diffCell ] = get_diffmaps( varargin )
 %GET_DIFFMAPS generate difference maps (not absoluted)
 %   @author Tao
     
@@ -19,13 +19,13 @@ function [ diff ] = get_diffmaps( varargin )
     end
     
     
-    diff = cell(param.nEhcMaps, 1);
+    diffCell = cell(param.nEhcMaps, 1);
     for mapIdx = 1:param.nEhcMaps
         % interpolate subtrahend in scale s to scale c
         interpSubtrahend = ...
             interpolate(subtrahend{param.modu_s(mapIdx)+1}, ...
                         param.modu_c(mapIdx)+1);
-        diff{mapIdx} = minuend{param.modu_c(mapIdx)+1} - interpSubtrahend;
+        diffCell{mapIdx} = minuend{param.modu_c(mapIdx)+1} - interpSubtrahend;
     end
     
 end
