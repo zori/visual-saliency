@@ -17,6 +17,8 @@ param = {};
 param.modulation_type = opt.modulation;
 modulation_type_str = int2str(param.modulation_type);
 fprintf('\nmodulation type: %s\n', modulation_type_str);
+param.modu_frame_calls = 0;
+param.maxROI_nz = 0;
 %---SALIENCY-END---
 
 % INITIALIZATION ----------------------------------------------------------
@@ -63,10 +65,10 @@ elseif n_frames < param.wSpan
     return
 end
 
-% some other initializations
-% TODO(zori) where is the "magical 6" taken from
-param.MAGICAL_DIMENSION = 6;
-W = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION, param.wSpan);
+% these are 3 pairs of (roi_weight, bkg_weight); see get_ehc_W() and boost_HSI()
+% the 3 channels are: I, RG, and BY
+param.CHANNEL_WEIGHTS_DIM = 6;
+W = zeros(param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM, param.wSpan);
 
 flash = {};
 flash.frm   = cell(param.flashL, 1);
@@ -74,7 +76,7 @@ flash.diffs = cell(param.flashL, 1);
 flash.mask  = cell(param.flashL, 1);
 flash.curBB = cell(param.flashL, 1);
 
-weights = zeros(param.nEhcMaps, param.MAGICAL_DIMENSION, param.nFrames);
+weights = zeros(param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM, param.nFrames);
 weightsIdx = 1;
 
 % writerObj = VideoWriter(strcat('result_',datestr(clock,'HHMMSS'),'.avi'));
@@ -425,10 +427,10 @@ switch param.modulation_type
         % same as case 3, only alpha is a vector of length param.wSpan
         % with values 1/(param.wSpan)
     case MOD_TYPE_EXP_SMOOTHING
-        W_reshaped = reshape(W, param.nEhcMaps * param.MAGICAL_DIMENSION, param.wSpan);
+        W_reshaped = reshape(W, param.nEhcMaps * param.CHANNEL_WEIGHTS_DIM, param.wSpan);
         assert(isfield(param, 'alpha'));
         res = W_reshaped * param.alpha;
-        meanW = reshape(res, param.nEhcMaps, param.MAGICAL_DIMENSION);
+        meanW = reshape(res, param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM);
     otherwise
         error('wrong modulation value');
 end
@@ -519,13 +521,22 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function on_finish(video_writers, saliency_flicker_writers)
 global param;
+fprintf('ZZZ: param.modu_frame_calls %d\n', param.modu_frame_calls);
+fprintf('ZZZ: param.maxROI_nz %d\n', param.maxROI_nz);
+
+% TODO(zori) convert all writes to file from dmlwrite to fprintf as it's only
+% meant to be human-readable
+% fprintf(saliency_flicker_writers{1}.txt, 'param.modu_frame_calls %d, param.maxROI_nz %d\n', param.modu_frame_calls, param.maxROI_nz);
+
+dlmwrite(saliency_flicker_writers{1}.txt, [param.modu_frame_calls, param.maxROI_nz], 'delimiter', ',');
+
 assert(length(video_writers) == param.n_output_videos);
 for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
     frame_avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg absolute saliency_flicker values per frame
-    dlmwrite(saliency_flicker_writers{k}.txt, [mean(frame_avg) std(frame_avg)], 'delimiter', ',');
+    dlmwrite(saliency_flicker_writers{k}.txt, [mean(frame_avg) std(frame_avg)], 'delimiter', ',', '-append', 'roffset', 1);
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');
 end

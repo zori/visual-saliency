@@ -19,7 +19,7 @@ function [ ehc, wMat ] = get_ehc_W( diff, maskPyra )
     % difference summation
     roi = zeros(param.resY, param.resX);
     bkg = zeros(param.resY, param.resX);
-    wMat = zeros(param.nEhcMaps, 2);
+    wMat = zeros(param.nEhcMaps, 2); % first column for roi weights; second: for bkg weights
     
     for mapIdx = 1:param.nEhcMaps
         
