@@ -9,7 +9,8 @@ function [ frame_out, deltaW ] = boost_HSI( frame_in, diffs, maskPyra )
     [ehc.RG, RGwMat] = get_ehc_W(diffs(:,2), maskPyra);
     [ehc.BY, BYwMat] = get_ehc_W(diffs(:,3), maskPyra);
     [ehc.H , ehc.S] = RGBY2pol(ehc.RG * param.ehcBc, ehc.BY * param.ehcBc);
-    deltaW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc];
+    deltaW = [IwMat, RGwMat * param.ehcBc, BYwMat * param.ehcBc]; % TODO(zori) for tldSaliency's k>6, all deltaW are 0
+    assert(param.CHANNEL_WEIGHTS_DIM == size(deltaW, 1))
     
     % TODO(zori) compare with enhance.m
     % vector addition
