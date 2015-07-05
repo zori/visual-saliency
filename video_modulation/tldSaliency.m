@@ -17,8 +17,6 @@ param = {};
 param.modulation_type = opt.modulation;
 modulation_type_str = int2str(param.modulation_type);
 fprintf('\nmodulation type: %s\n', modulation_type_str);
-param.modu_frame_calls = 0;
-param.maxROI_nz = 0;
 %---SALIENCY-END---
 
 % INITIALIZATION ----------------------------------------------------------
@@ -27,9 +25,9 @@ param.maxROI_nz = 0;
 opt.source = tldInitSource(opt.source);
 
 % open figure for display of results
-fig_h = 2;
-figure(fig_h);
-set(fig_h,'KeyPressFcn',@handle_q_key);
+FIG_H = 2;
+figure(FIG_H);
+set(FIG_H,'KeyPressFcn',@handle_q_key);
 % by pressing 'q' key, the process will exit
 global finish; % to be modified by handle_q_key()
 finish = 0;
@@ -50,7 +48,8 @@ tld = tldDisplay(0,tld);
 n_frames = length(tld.source.idx);
 curFrame = im2double(imread(source.files(1).name));
 [param.resY, param.resX, param.nChannel] = size(curFrame);
-set_param;
+% NOTE(zori): bad practice ahead: param is global, being changed in the following
+set_param();
 curBB = get_current_BB(1);
 
 % some basic data verification
@@ -65,10 +64,6 @@ elseif n_frames < param.wSpan
     return
 end
 
-% these are 3 pairs of (roi_weight, bkg_weight); see get_ehc_W() and boost_HSI()
-% the 3 channels are: I, RG, and BY
-param.N_DIFF_CHANNELS = 3;
-param.CHANNEL_WEIGHTS_DIM = 2 * param.N_DIFF_CHANNELS;
 W = zeros(param.nEhcMaps, param.CHANNEL_WEIGHTS_DIM, param.wSpan);
 
 flash = {};
@@ -120,6 +115,8 @@ if ~exist(output_video_path, 'dir')
 end
 saliency_flicker_writers{1}.txt = fullfile(output_video_path, [output_video_name ' saliency-flicker' '.txt']);
 saliency_flicker_writers{2}.txt = fullfile(output_video_path, ['saliency-flicker' '.txt']);
+saliency_flicker_writers{3}.txt = fullfile(output_video_path, [output_video_name ' saliency-plot']);
+saliency_flicker_writers{4}.txt = fullfile(output_video_path, [output_video_name ' saliency-flicker-plot']);
 
 % create video writer objects for the video, the two saliency videos and the
 % merged output (the three next to each other)
@@ -218,7 +215,7 @@ for k = 2:n_frames % for every frame
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, diffs, mask, W(:,:,2)*gamma, lastPyrasAft);
+            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft);
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame
@@ -243,7 +240,7 @@ for k = 2:n_frames % for every frame
             % BB = flash.curBB{1}; rectangle('Position', [BB(1) BB(2) BB(3)-BB(1) BB(4)-BB(2)], 'LineWidth', 4, 'EdgeColor', 'y');
             % print(ff, '-r80', '-djpeg', fullfile(source.input, [opt.source.init_bb_name(1:end-4) '.jpg']));
             
-            visualHandles = init_visual(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
+            visualHandles = init_visual(FIG_H, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1});
         end
         % TODO(zori) pyrasAft code repetition? Is this the modulated frame's
@@ -254,7 +251,7 @@ for k = 2:n_frames % for every frame
         [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx);
         
         if TO_VISUALIZE
-            visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
+            visualHandles = visualize(FIG_H, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1}, visualHandles);
         end
         pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
@@ -302,7 +299,7 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
         pyras2saliency(pyrasBef);
     
     if TO_VISUALIZE
-        visualHandles = visualize(fig_h, input_img, writable_imgs{1}, [], [], meanW, ...
+        visualHandles = visualize(FIG_H, input_img, writable_imgs{1}, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
     end
     pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
@@ -522,14 +519,66 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function on_finish(video_writers, saliency_flicker_writers)
 global param;
-fprintf('ZZZ: param.modu_frame_calls %d\n', param.modu_frame_calls);
-fprintf('ZZZ: param.maxROI_nz %d\n', param.maxROI_nz);
+% fprintf('ZZZ: param.modu_frame_calls %d\n', param.modu_frame_calls);
+max_sal_outside_ROI = param.nFrames - 1 - sum(param.ROI_sal_max);
+fprintf('ZZZ: max saliency outside ROI %d\n', max_sal_outside_ROI);
 
 % TODO(zori) convert all writes to file from dmlwrite to fprintf as it's only
 % meant to be human-readable
-% fprintf(saliency_flicker_writers{1}.txt, 'param.modu_frame_calls %d, param.maxROI_nz %d\n', param.modu_frame_calls, param.maxROI_nz);
 
-dlmwrite(saliency_flicker_writers{1}.txt, [param.modu_frame_calls, param.maxROI_nz], 'delimiter', ',');
+% % saliency plot
+% ROI avg saliency
+SAL_PLOT_FIG_H = 3;
+figure(SAL_PLOT_FIG_H);
+avg = param.ROI_sal ./ param.nROI_pixels;
+plot(avg, 'g');
+hold on
+boosting_req = double(~param.ROI_sal_max);
+boosting_req(boosting_req == 0) = NaN;
+boosted = avg .* (boosting_req);
+% boosted(boosted == 0) = NaN;
+plot(boosted, 'b*');
+max_non_ROI_sal_val = param.max_non_ROI_sal_val;
+max_non_ROI_sal_val(max_non_ROI_sal_val == 0) = NaN;
+plot(max_non_ROI_sal_val, 'r');
+hold off
+
+xlabel('frame number (time)');
+ylabel('saliency');
+title('saliency');
+legend('avg ROI', 'boosting', 'max outside ROI', 'Location', 'southeast');
+
+saveas(gcf, saliency_flicker_writers{3}.txt, 'jpg');
+
+% % saliency_flicker plot
+SAL_FLICKER_PLOT_FIG_H = 4;
+figure(SAL_FLICKER_PLOT_FIG_H);
+orig = saliency_flicker_writers{1}.avg;
+orig(orig == 0) = NaN;
+plot(orig, 'c')
+hold on
+% plot(boosting_req .* orig', 'rx');
+% bar(boosting_req, 0.03);
+modulated = saliency_flicker_writers{2}.avg;
+modulated(modulated == 0) = NaN;
+modu_b = boosting_req .* modulated';
+orig_b = boosting_req .* orig';
+plot(modulated, 'm')
+v = boosting_req .* (1:param.nFrames);
+for k = 1:length(v) 
+    plot([v(k), v(k)], [modu_b(k), orig_b(k)], 'r');
+end
+hold off
+
+xlabel('frame number (time)');
+ylabel('saliency flicker');
+title('saliency flicker');
+legend('original', 'modulated increase', 'boosting', 'Location', 'southeast');
+
+saveas(gcf, saliency_flicker_writers{4}.txt, 'jpg');
+
+% % stats
+dlmwrite(saliency_flicker_writers{1}.txt, [max_sal_outside_ROI], 'delimiter', ',');
 
 assert(length(video_writers) == param.n_output_videos);
 for k = 1:param.n_output_videos

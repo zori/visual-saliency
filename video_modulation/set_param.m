@@ -4,12 +4,12 @@ function [ ] = set_param( )
 
     global param;
 
-    %% video properties
+    % % video properties
     
     param.fps = 30;
     param.nFrames = 300;
     
-    %% saliency map generation
+    % % saliency map generation
 
     % pyramids
     param.pyraScales = 8;
@@ -73,10 +73,10 @@ function [ ] = set_param( )
         normpdf_z(circKernel, 0, dogDelta) - ...
         normpdf_z(circKernel, 0, dogK * dogDelta);
     
-    %% fixation simulation
-%     param.foaSqrRadius = 25;
+    % % fixation simulation
+    %     param.foaSqrRadius = 25;
  
-    %% saliency boosting
+    % % saliency boosting
     
     % mask refinement
 	param.maskGradWidth = 3;
@@ -101,11 +101,27 @@ function [ ] = set_param( )
     param.k_c = 1/2;
     param.wSpan = 9;
     param.flashL = ceil(param.wSpan / 2);
-    
+
+    % these are 3 pairs of (roi_weight, bkg_weight); see get_ehc_W() and boost_HSI()
+    % the 3 channels are: I, RG, and BY
+    param.N_DIFF_CHANNELS = 3;
+    param.CHANNEL_WEIGHTS_DIM = 2 * param.N_DIFF_CHANNELS;
+
     % chromatic plot
     param.chroplot_arcI = 0.3;
     param.chroplot_nArcs = 180;
     param.chroplot_nImageDots = 50;
     param.chroplot_nROIDots = 50;
-    
+
+    % % NEW(zori) boosting statistics
+    % param.modu_frame_calls = 0; % not needed, param.nFrames - 1, as expected;
+    % the first call is to modu_1st_frame())
+    % param.maxROI_nz = 0;
+    param.ROI_sal_max = zeros(1, param.nFrames); % boolean, is the most salient pixel inside the ROI
+    % value and location of the maximally salient pixel outside the ROI
+    param.max_non_ROI_sal_val = zeros(1, param.nFrames);
+    param.max_non_ROI_sal_ind = zeros(1, param.nFrames);
+    param.ROI_sal = zeros(1, param.nFrames); % sum of the saliency of the ROI pixels
+    param.nROI_pixels = zeros(1, param.nFrames); % number of the ROI pixels
+
 end
