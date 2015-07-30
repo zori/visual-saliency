@@ -1,11 +1,11 @@
-function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W, lastPyrasAft )
+function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft )
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
     
     global param;
 
     % pre-enhance
-    frame_enhanced = enhance(frame_in, diffs, mask, W);
+    frame_enhanced = enhance(frame_in, diffs, mask, W_orig);
     pyrasAft = make_pyras(frame_enhanced, lastPyrasAft);
     SAft = simple_norm(enlarge(get_salimap(pyrasAft)));
     
@@ -42,5 +42,8 @@ function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W, las
     % deltaW = zeros(size(W)); frame_out = frame_enhanced;
     
     % updating of W
-    W = W + deltaW;
+    W = W_orig + deltaW;
+    if any(isnan(W(:)))
+        error('NaN in weight matrix');
+    end
 end

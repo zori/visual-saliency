@@ -5,6 +5,6 @@ function [ compressedMap, M ] = range_compress( map )
 
     absMap = abs(map);
     M = max(absMap(:));
-    compressedMap = map / M;
+    compressedMap = safe_divide(map, M);
 
 end

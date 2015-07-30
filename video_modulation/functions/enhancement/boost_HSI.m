@@ -27,4 +27,7 @@ function [ frame_out, deltaW ] = boost_HSI( frame_in, diffs, maskPyra )
     hsi(:,:,3) = max(min(aftInt, 1), 0);
     frame_out = hsi2rgb(hsi);
 
+    if any(isnan(deltaW(:)))
+        exit('Error: NaN in weight matrix');
+    end
 end

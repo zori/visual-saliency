@@ -177,9 +177,10 @@ mask = get_mask(curBB, writable_imgs{6});
 % preparation for next frame
 % re-generation of pyras
 saliency_flicker_writers{1}.avg = zeros(n_frames, 1);
+saliency_flicker_writers{1}.avg_abs = zeros(n_frames, 1);
 pyrasAft = make_pyras(editedFrame);
 pyras_modulated = pyrasAft;
-[writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1)] = ...
+[writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1), saliency_flicker_writers{1}.avg_abs(1)] = ...
     pyras2saliency(pyras_modulated, writable_imgs{7});
 % calculate gamma
 rgbDiff = abs(editedFrame - curFrame);
@@ -227,7 +228,7 @@ for k = 2:n_frames % for every frame
         fprintf('\t%f\n', gamma);
     else
         fprintf('\ttarget lost\n');
-        break;
+        exit('Error: target lost');
     end
     
     if k == param.flashL
@@ -255,8 +256,12 @@ for k = 2:n_frames % for every frame
                 flash.curBB{1}, visualHandles);
         end
         pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(k)] = ...
+        kk = k - param.flashL + 1;
+        [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(kk), saliency_flicker_writers{1}.avg_abs(kk)] = ...
             pyras2saliency(pyras_modulated, writable_imgs{7});
+        if saliency_flicker_writers{1}.avg_abs(kk) <= saliency_flicker_writers{2}.avg(k)
+            warning('(at k) modulated saliency flicker lower than original one');
+        end
         if param.write_orig, writable_imgs{5} = input_img; end
         write_videos(video_writers, writable_imgs);
     end
@@ -303,9 +308,13 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
             flash.curBB{1}, visualHandles);
     end
     pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
-    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(ind)] = ...
+    % TODO(zori) iind = ind - param.flashL; ? needed?
+    iind = ind - param.flashL + 1;
+    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(iind), saliency_flicker_writers{1}.avg_abs(iind)] = ...
         pyras2saliency(pyras_modulated, writable_imgs{7});
-    
+    if saliency_flicker_writers{1}.avg_abs(iind) <= saliency_flicker_writers{2}.avg(ind)
+        warning('(at ind) modulated saliency flicker lower than original one');
+    end
     if param.write_orig, writable_imgs{5} = input_img; end
     write_videos(video_writers, writable_imgs);
 end
@@ -322,8 +331,14 @@ end
 function current_BB = get_current_BB(ind)
 global tld;
 global param;
+% a column vector with the bb coords for frame #ind: tld.bb(:,ind)
 current_BB = [max([1;1], tld.bb(1:2,ind)); ...
     min([param.resX;param.resY], tld.bb(3:4,ind))];
+
+% % Single-pixel experiment: get the upper-right corner instead
+% x2 = tld.bb(3, ind);
+% y1 = tld.bb(2, ind);
+% current_BB = [x2 y1 x2 y1]';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -357,7 +372,7 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_saliency_flicker)
+function [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency(pyras, orig_saliency_flicker)
 % Produces frame saliency statistic based on the current frame's pyramids.
 %
 % USAGE
@@ -383,6 +398,7 @@ function [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_sa
 % in case we have the modulated saliency, the original video's saliency_flicker
 % is passed too; subtract, to only reason about the difference
 if nargin == 2
+    [~, ~, frame_avg_abs] = pyras2saliency(pyras);
     saliency_flicker = saliency_flicker - orig_saliency_flicker;
     orig_frame_avg = mean(orig_saliency_flicker(:));
     frame_avg = mean(abs(saliency_flicker(:))) ./ (orig_frame_avg + (orig_frame_avg == 0));
@@ -553,17 +569,17 @@ saveas(gcf, saliency_flicker_writers{3}.txt, 'jpg');
 % % saliency_flicker plot
 SAL_FLICKER_PLOT_FIG_H = 4;
 figure(SAL_FLICKER_PLOT_FIG_H);
-orig = saliency_flicker_writers{1}.avg;
+orig = saliency_flicker_writers{2}.avg;
 orig(orig == 0) = NaN;
 plot(orig, 'c')
 hold on
 % plot(boosting_req .* orig', 'rx');
 % bar(boosting_req, 0.03);
-modulated = saliency_flicker_writers{2}.avg;
-modulated(modulated == 0) = NaN;
-modu_b = boosting_req .* modulated';
+modulated_abs = saliency_flicker_writers{1}.avg_abs;
+modulated_abs(modulated_abs == 0) = NaN;
+modu_b = boosting_req .* modulated_abs';
 orig_b = boosting_req .* orig';
-plot(modulated, 'm')
+plot(modulated_abs, 'm')
 v = boosting_req .* (1:param.nFrames);
 for k = 1:length(v) 
     plot([v(k), v(k)], [modu_b(k), orig_b(k)], 'r');
@@ -573,7 +589,7 @@ hold off
 xlabel('frame number (time)');
 ylabel('saliency flicker');
 title('saliency flicker');
-legend('original', 'modulated increase', 'boosting', 'Location', 'southeast');
+legend('original', 'modulated', 'boosting', 'Location', 'southeast');
 
 saveas(gcf, saliency_flicker_writers{4}.txt, 'jpg');
 
@@ -585,7 +601,7 @@ for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
-    frame_avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg absolute saliency_flicker values per frame
+    frame_avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg saliency_flicker values per frame (absolute or relative to the original, for the modulated)
     dlmwrite(saliency_flicker_writers{k}.txt, [mean(frame_avg) std(frame_avg)], 'delimiter', ',', '-append', 'roffset', 1);
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');

@@ -20,12 +20,16 @@ opt.sequence_name   = 'orig_city_300';
 opt.modulation = 1; % 1 - no smoothing, 2 - simple averaging within a 6-frame window, or 3 - exponential smoothing
 opt.smoothing_param_recipr = 3; % 3, 7
 
+% opt.source          = struct('init_bb_name','init3.txt',... % init3 is just a
+% copy of init2; used to indicate in the output files of the experiment that
+% only the upper-right corner of the bounding box is considered for modulation (the single-pixel experiment) 
 opt.source          = struct('init_bb_name','init2.txt',... % bounding box file
     'camera',0,...
     'input',fullfile('dataset','video',opt.sequence_name,filesep),...
     'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
 opt.output          = 'TLD_source/_output/'; mkdir(opt.output); % output directory that will contain bounding boxes + confidence
 
+% min_win             = 1;
 min_win             = 10; % minimal size of the object's bounding box in the scanning grid, it may significantly influence speed of TLD, set it to minimal size of the object
 patchsize           = [30 30]; % size of normalized patch in the object detector, larger sizes increase discriminability, must be square
 fliplr              = 0; % if set to one, the model automatically learns mirrored versions of the object
