@@ -213,10 +213,7 @@ for k = 2:n_frames % for every frame
             pyras2saliency(pyrasBef);
         mask = get_mask(curBB, writable_imgs{6});
         
-        ORIG_BOOSTING = 0; % original code, as Tao SHI implemented it
-        LLS = 1; % non-weighted linear least squares
-        WLLS = 2; % weighted LLS
-        LLS_option = WLLS;
+        LLS_option = MinimisationOption.WLLS;
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
             modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, LLS_option);
