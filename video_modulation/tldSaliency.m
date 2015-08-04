@@ -169,7 +169,6 @@ saliency_flicker_writers{2}.avg = zeros(n_frames, 1);
 mask = get_mask(curBB, writable_imgs{6});
 % do enhancement
 [param.ehcBc, param.ehcBd] = init_betas(curFrame, mask);
-% TODO(zori) figure out how modu_1st_frame is different from modu_frame and if I can merge them
 [editedFrame, W(:,:,1)] = modu_1st_frame(curFrame, diffs, mask, writable_imgs{6});
 
 [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
@@ -214,9 +213,13 @@ for k = 2:n_frames % for every frame
             pyras2saliency(pyrasBef);
         mask = get_mask(curBB, writable_imgs{6});
         
+        ORIG_BOOSTING = 0; % original code, as Tao SHI implemented it
+        LLS = 1; % non-weighted linear least squares
+        WLLS = 2; % weighted LLS
+        LLS_option = WLLS;
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft);
+            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, LLS_option);
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame
@@ -364,51 +367,6 @@ open(video_writer_object);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function varargout = process_saliency(varargin)
-varargout = cell(size(varargin));
-for k=1:nargin
-    varargout{k} = simple_norm(enlarge(varargin{k}));
-end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency(pyras, orig_saliency_flicker)
-% Produces frame saliency statistic based on the current frame's pyramids.
-%
-% USAGE
-%  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras)
-%  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_saliency_flicker)
-%
-% INPUTS
-%  pyras                 - pyramids for the current frame
-%  orig_saliency_flicker - (optional) the saliency flicker of the original
-%                          frame, if this is the modulated one
-%
-% OUTPUTS
-%  saliency              - [h x w] saliency map
-%  saliency_flicker      - [h x w] flicker saliency map: absolute for the
-%                          original frame; difference values for the modulated frame
-%  frame_avg             - average flicker saliency: absolute for the original
-%                          frame; relative to the original for the modulated
-%                          one, indicating the percentage of added flicker
-%                          (undesirable) through the modulation
-
-[saliency, saliency_flicker] = get_salimap(pyras);
-[saliency, saliency_flicker] = process_saliency(saliency, saliency_flicker);
-% in case we have the modulated saliency, the original video's saliency_flicker
-% is passed too; subtract, to only reason about the difference
-if nargin == 2
-    [~, ~, frame_avg_abs] = pyras2saliency(pyras);
-    saliency_flicker = saliency_flicker - orig_saliency_flicker;
-    orig_frame_avg = mean(orig_saliency_flicker(:));
-    frame_avg = mean(abs(saliency_flicker(:))) ./ (orig_frame_avg + (orig_frame_avg == 0));
-else
-    assert(all(saliency_flicker(:) >= 0));
-    frame_avg = mean(saliency_flicker(:));
-end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB)
 % flash storage
 flash.frm{1}   = curFrame;
@@ -535,7 +493,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function on_finish(video_writers, saliency_flicker_writers)
 global param;
-% fprintf('ZZZ: param.modu_frame_calls %d\n', param.modu_frame_calls);
 max_sal_outside_ROI = param.nFrames - 1 - sum(param.ROI_sal_max);
 fprintf('ZZZ: max saliency outside ROI %d\n', max_sal_outside_ROI);
 
