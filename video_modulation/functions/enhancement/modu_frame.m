@@ -1,9 +1,11 @@
-function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft, minimisation_choice )
+function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_type_opt, minim_area_opt )
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
 
 global param;
-if ~exist('minimisation_choice','var'), minimisation_choice = MinimisationOption.ORIG_BOOSTING; end
+% make sure choice parameters are defined
+assert(exist('minim_type_opt','var') == 1) % good default would be: minim_type_opt = MinimisationOption.TYPE_ORIG_BOOSTING
+assert(exist('minim_area_opt','var') == 1)
 
 % pre-enhance
 frame_enhanced = enhance(frame_in, diffs, mask, W_orig);
@@ -49,10 +51,18 @@ if any(isnan(W(:)))
     error('NaN in weight matrix');
 end
 
-switch minimisation_choice
-    case MinimisationOption.ORIG_BOOSTING
+switch minim_area_opt
+    case MinimisationOption.AREA_ROI
+        minim_area = mask_locations;
+    case MinimisationOption.AREA_ENTIRE_IMAGE
+        minim_area = true(size(SAft));
+    otherwise, exit('Unknown minimisation area option');
+end
+
+switch minim_type_opt
+    case MinimisationOption.TYPE_ORIG_BOOSTING
         frame_out = frame_boosted;
-    case {MinimisationOption.LLS, MinimisationOption.WLLS}
+    case {MinimisationOption.TYPE_LLS, MinimisationOption.TYPE_WLLS}
         % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
         % original as possible.
         
@@ -65,25 +75,30 @@ switch minimisation_choice
         b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
         for c = 1:n_channels
             chan = frame_in(:, :, c);
-            b = [b; chan(mask_locations)];
+            b = [b; chan(minim_area)];
             chan = frame_boosted(:, :, c);
-            A = [A; chan(mask_locations)];
+            A = [A; chan(minim_area)];
         end
         A = [A ones(length(A), 1)];
         
-        if minimisation_choice == MinimisationOption.LLS
+        if minim_type_opt == MinimisationOption.TYPE_LLS
             p = A \ b;
         else
-            assert(minimisation_choice == MinimisationOption.WLLS)
+            assert(minim_type_opt == MinimisationOption.TYPE_WLLS)
             
             % get the weights: normalised flicker saliency
             pyras_boosted = make_pyras(frame_boosted, lastPyrasAft);
             [~, saliency_flicker] = pyras2saliency(pyras_boosted);
-            SF_ROI = saliency_flicker(mask_locations);
+            SF_minim_area = saliency_flicker(minim_area);
             % TODO(zori) NORMALISE!!! flicker saliency; make sure the values are
             % positive, as they will be used as weights in the minimisation
-            FW = diag(repmat(SF_ROI, n_channels, 1));
-            p = (A' * FW * A) \ (A' * FW * b);
+            FW = repmat(SF_minim_area, n_channels, 1);
+            % % the following creates a huge matrix
+            % DFW = diag(FW);
+            % p = (A' * DFW * A) \ (A' * DFW * b);
+            % % instead, precalculate: define AFW, such that AFW == A' * DFW
+            AFW = [A(:,1) .* FW FW]';
+            p = (AFW * A) \ (AFW * b);
         end
         % Theta = p(1);
         % phi = p(2);
@@ -92,11 +107,10 @@ switch minimisation_choice
         frame_lls = zeros(size(frame_boosted));
         for c = 1:n_channels
             chan = frame_boosted(:, :, c);
-            chan(mask_locations) = lls_out(:, c);
+            chan(minim_area) = lls_out(:, c);
             frame_lls(:, :, c) = chan;
         end
         frame_out = frame_lls;
-    otherwise
-        exit('Unknown minimisation option');
+    otherwise, exit('Unknown minimisation type option');
 end
 end

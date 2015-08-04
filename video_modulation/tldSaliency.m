@@ -213,10 +213,11 @@ for k = 2:n_frames % for every frame
             pyras2saliency(pyrasBef);
         mask = get_mask(curBB, writable_imgs{6});
         
-        LLS_option = MinimisationOption.WLLS;
+        minim_type_opt = MinimisationOption.TYPE_WLLS;
+        minim_area_opt = MinimisationOption.AREA_ROI; % AREA_ENTIRE_IMAGE;
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, LLS_option);
+            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_type_opt, minim_area_opt);
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame
