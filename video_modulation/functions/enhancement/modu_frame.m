@@ -90,8 +90,14 @@ switch minim_type_opt
             pyras_boosted = make_pyras(frame_boosted, lastPyrasAft);
             [~, saliency_flicker] = pyras2saliency(pyras_boosted);
             SF_minim_area = saliency_flicker(minim_area);
-            % TODO(zori) NORMALISE!!! flicker saliency; make sure the values are
-            % positive, as they will be used as weights in the minimisation
+            % TODO(zori) The flicker saliency values should be positive (not 
+            % just non-negative), as they are used as weights in the
+            % minimisation. 
+            % But in most cases saliency flicker contains 0. Is it always true?
+            % What should be done in those cases?
+            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
+            assert(all(SF_minim_area) >= 0)
+            SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
             FW = repmat(SF_minim_area, n_channels, 1);
             % % the following creates a huge matrix
             % DFW = diag(FW);
@@ -112,5 +118,11 @@ switch minim_type_opt
         end
         frame_out = frame_lls;
     otherwise, exit('Unknown minimisation type option');
+end
+min_pix = min(frame_out(:));
+max_pix = max(frame_out(:));
+% TODO(zori) the values will get 'hedged' to [0, 1]; is that a problem?
+if min_pix < 0 || max_pix > 1
+    warning(['out-of-range modulated value(s) - min: ' num2str(min_pix) '; max: ' num2str(max_pix)]);
 end
 end
