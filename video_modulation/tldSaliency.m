@@ -214,7 +214,7 @@ for k = 2:n_frames % for every frame
         mask = get_mask(curBB, writable_imgs{6});
         
         minim_type_opt = MinimisationOption.TYPE_WLLS;
-        minim_area_opt = MinimisationOption.AREA_ROI; % AREA_ENTIRE_IMAGE;
+        minim_area_opt = MinimisationOption.AREA_ENTIRE_IMAGE; % .AREA_ROI;
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
             modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_type_opt, minim_area_opt);
@@ -256,12 +256,17 @@ for k = 2:n_frames % for every frame
             visualHandles = visualize(FIG_H, input_img, writable_imgs{1}, [], [], meanW, ...
                 flash.curBB{1}, visualHandles);
         end
-        pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
+        % TOOD(zori): start from here; what should pyras_modulated be?
+        % pyras_modulated = pyrasAft;
+        pyras_modulated = make_pyras(writable_imgs{1}, pyrasBef); % pyras_modulated);
         kk = k - param.flashL + 1;
         [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(kk), saliency_flicker_writers{1}.avg_abs(kk)] = ...
             pyras2saliency(pyras_modulated, writable_imgs{7});
-        if saliency_flicker_writers{1}.avg_abs(kk) <= saliency_flicker_writers{2}.avg(k)
-            warning('(at k) modulated saliency flicker lower than original one');
+        if saliency_flicker_writers{1}.avg_abs(kk) <= saliency_flicker_writers{2}.avg(kk)
+            % TODO(zori) this happens too often; how is this possible in the
+            % first place? Maybe that indicates a bug in the flicker saliency
+            % computation
+            % warning(['(at k) modulated saliency flicker lower than original one (' num2str(saliency_flicker_writers{1}.avg_abs(kk)) ' and ' num2str(saliency_flicker_writers{2}.avg(k)) ')']);
         end
         if param.write_orig, writable_imgs{5} = input_img; end
         write_videos(video_writers, writable_imgs);
@@ -308,13 +313,14 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
         visualHandles = visualize(FIG_H, input_img, writable_imgs{1}, [], [], meanW, ...
             flash.curBB{1}, visualHandles);
     end
-    pyras_modulated = make_pyras(writable_imgs{1}, pyras_modulated);
+    % pyras_modulated = pyrasBef; % TODO(zori) I think yes
+    pyras_modulated = make_pyras(writable_imgs{1}, pyrasBef);
     % TODO(zori) iind = ind - param.flashL; ? needed?
     iind = ind - param.flashL + 1;
     [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(iind), saliency_flicker_writers{1}.avg_abs(iind)] = ...
         pyras2saliency(pyras_modulated, writable_imgs{7});
-    if saliency_flicker_writers{1}.avg_abs(iind) <= saliency_flicker_writers{2}.avg(ind)
-        warning('(at ind) modulated saliency flicker lower than original one');
+    if saliency_flicker_writers{1}.avg_abs(iind) <= saliency_flicker_writers{2}.avg(iind)
+        % warning('(at ind) modulated saliency flicker lower than original one');
     end
     if param.write_orig, writable_imgs{5} = input_img; end
     write_videos(video_writers, writable_imgs);
