@@ -6,7 +6,7 @@ function [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency
 %
 % USAGE
 %  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras)
-%  [saliency, saliency_flicker, frame_avg] = pyras2saliency(pyras, orig_saliency_flicker)
+%  [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency(pyras, orig_saliency_flicker)
 %
 % INPUTS
 %  pyras                 - pyramids for the current frame
@@ -21,6 +21,8 @@ function [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency
 %                          frame; relative to the original for the modulated
 %                          one, indicating the percentage of added flicker
 %                          (undesirable) through the modulation
+%  frame_avg_abs         - absolute average flicker saliency for the modulated
+%                          frame
 
 [saliency, saliency_flicker] = get_salimap(pyras);
 [saliency, saliency_flicker] = process_saliency(saliency, saliency_flicker);
