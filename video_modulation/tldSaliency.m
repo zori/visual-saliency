@@ -110,10 +110,13 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-minim_type_opt = MinimisationOption.T_ORIG;
-minim_area_opt = MinimisationOption.A_IMG;
-video_name_append = [video_name_append ' ' char(minim_type_opt)];
-video_name_append = [video_name_append ' ' char(minim_area_opt)];
+minim_opt.type = MinimisationOption.T_ORIG;
+minim_opt.area = MinimisationOption.A_IMG;
+minim_opt.temp = MinimisationOption.TEMP_O;
+
+video_name_append = [video_name_append ' ' char(minim_opt.type)];
+video_name_append = [video_name_append ' ' char(minim_opt.area)];
+video_name_append = [video_name_append ' ' char(minim_opt.temp)];
 
 output_video_name = [timestamp video_name_append];
 output_video_path = fullfile('..', 'experiments', opt.sequence_name);
@@ -222,7 +225,7 @@ for k = 2:n_frames % for every frame
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_type_opt, minim_area_opt);
+            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_opt);
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame

@@ -1,11 +1,9 @@
-function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_type_opt, minim_area_opt )
+function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_opt )
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
 
 global param;
 % make sure choice parameters are defined
-assert(exist('minim_type_opt','var') == 1) % good default would be: minim_type_opt = MinimisationOption.T_ORIG
-assert(exist('minim_area_opt','var') == 1)
 
 % pre-enhance
 frame_enhanced = enhance(frame_in, diffs, mask, W_orig);
@@ -51,7 +49,7 @@ if any(isnan(W(:)))
     error('NaN in weight matrix');
 end
 
-switch minim_area_opt
+switch minim_opt.area
     case MinimisationOption.A_ROI
         minim_area = mask_locations;
     case MinimisationOption.A_IMG
@@ -59,7 +57,7 @@ switch minim_area_opt
     otherwise, exit('Unknown minimisation area option');
 end
 
-switch minim_type_opt
+switch minim_opt.type
     case MinimisationOption.T_ORIG
         frame_out = frame_boosted;
     case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS}
@@ -81,10 +79,10 @@ switch minim_type_opt
         end
         A = [A ones(length(A), 1)];
         
-        if minim_type_opt == MinimisationOption.T_LLS
+        if minim_opt.type == MinimisationOption.T_LLS
             p = A \ b;
         else
-            assert(minim_type_opt == MinimisationOption.T_WLLS)
+            assert(minim_opt.type == MinimisationOption.T_WLLS)
             
             % get the weights: normalised flicker saliency
             pyras_boosted = make_pyras(frame_boosted, lastPyrasAft);
