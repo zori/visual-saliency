@@ -4,7 +4,7 @@ function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig
 
 global param;
 % make sure choice parameters are defined
-assert(exist('minim_type_opt','var') == 1) % good default would be: minim_type_opt = MinimisationOption.TYPE_ORIG_BOOSTING
+assert(exist('minim_type_opt','var') == 1) % good default would be: minim_type_opt = MinimisationOption.T_ORIG
 assert(exist('minim_area_opt','var') == 1)
 
 % pre-enhance
@@ -52,17 +52,17 @@ if any(isnan(W(:)))
 end
 
 switch minim_area_opt
-    case MinimisationOption.AREA_ROI
+    case MinimisationOption.A_ROI
         minim_area = mask_locations;
-    case MinimisationOption.AREA_ENTIRE_IMAGE
+    case MinimisationOption.A_IMG
         minim_area = true(size(SAft));
     otherwise, exit('Unknown minimisation area option');
 end
 
 switch minim_type_opt
-    case MinimisationOption.TYPE_ORIG_BOOSTING
+    case MinimisationOption.T_ORIG
         frame_out = frame_boosted;
-    case {MinimisationOption.TYPE_LLS, MinimisationOption.TYPE_WLLS}
+    case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS}
         % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
         % original as possible.
         
@@ -81,10 +81,10 @@ switch minim_type_opt
         end
         A = [A ones(length(A), 1)];
         
-        if minim_type_opt == MinimisationOption.TYPE_LLS
+        if minim_type_opt == MinimisationOption.T_LLS
             p = A \ b;
         else
-            assert(minim_type_opt == MinimisationOption.TYPE_WLLS)
+            assert(minim_type_opt == MinimisationOption.T_WLLS)
             
             % get the weights: normalised flicker saliency
             pyras_boosted = make_pyras(frame_boosted, lastPyrasAft);

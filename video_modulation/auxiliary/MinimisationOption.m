@@ -2,13 +2,13 @@
 % Aug 2015
 % 8.5.0.197613 (R2015a)
 classdef MinimisationOption
-    enumeration
-        TYPE_ORIG_BOOSTING % original code, as Tao SHI implemented it
-        TYPE_LLS % non-weighted linear least squares
-        TYPE_WLLS % weighted LLS
+    enumeration % type of minimisation (if any)
+        T_ORIG % original code, as Tao SHI implemented it
+        T_LLS % non-weighted linear least squares
+        T_WLLS % weighted LLS
     end
-    enumeration
-        AREA_ROI
-        AREA_ENTIRE_IMAGE
+    enumeration % area to minimise on
+        A_ROI
+        A_IMG % entire image
     end
 end

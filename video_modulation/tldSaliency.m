@@ -108,6 +108,13 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
     
     video_name_append = [video_name_append ' SMOOTH' num2str(opt.smoothing_param_recipr)];
 end
+
+% add (W)LLS option and AREA option to output name
+minim_type_opt = MinimisationOption.T_ORIG;
+minim_area_opt = MinimisationOption.A_IMG;
+video_name_append = [video_name_append ' ' char(minim_type_opt)];
+video_name_append = [video_name_append ' ' char(minim_area_opt)];
+
 output_video_name = [timestamp video_name_append];
 output_video_path = fullfile('..', 'experiments', opt.sequence_name);
 if ~exist(output_video_path, 'dir')
@@ -213,8 +220,6 @@ for k = 2:n_frames % for every frame
             pyras2saliency(pyrasBef);
         mask = get_mask(curBB, writable_imgs{6});
         
-        minim_type_opt = MinimisationOption.TYPE_WLLS;
-        minim_area_opt = MinimisationOption.AREA_ENTIRE_IMAGE; % .AREA_ROI;
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
             modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_type_opt, minim_area_opt);
