@@ -1,4 +1,4 @@
-function [ frame_out, W ] = modu_frame( frame_in, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_opt )
+function [ frame_out, W ] = modu_frame( frame_orig, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_opt, frame_prev_edited )
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
 
@@ -6,7 +6,7 @@ global param;
 % make sure choice parameters are defined
 
 % pre-enhance
-frame_enhanced = enhance(frame_in, diffs, mask, W_orig);
+frame_enhanced = enhance(frame_orig, diffs, mask, W_orig);
 pyrasAft = make_pyras(frame_enhanced, lastPyrasAft);
 SAft = process_saliency(get_salimap(pyrasAft));
 
@@ -30,7 +30,7 @@ if maxROI ~= 1 % mobile INIT1 MOD1 frame 016 - 038 no boosting; 039 boosting
     % disp('boosting req');
     % db_stop;
     %         [y, x] = ind2sub(size(SAft), param.max_non_ROI_sal_ind(frame_ind));
-    %         figure(7); im(frame_in); hold on; plot(x,y,'rx','MarkerSize', 20); saveas(gcf, ['/home/work/downloads/' int2str(frame_ind) '_f'], 'jpg');
+    %         figure(7); im(frame_orig); hold on; plot(x,y,'rx','MarkerSize', 20); saveas(gcf, ['/home/work/downloads/' int2str(frame_ind) '_f'], 'jpg');
     %         figure(8); im(SAft); hold on; plot(x,y,'rx','MarkerSize', 20); saveas(gcf, ['/home/work/downloads/' int2str(frame_ind) '_SAft'], 'jpg');
 end
 fprintf('\t%f', maxROI);
@@ -57,9 +57,11 @@ switch minim_opt.area
     otherwise, exit('Unknown minimisation area option');
 end
 
+frame_in = frame_boosted;
+frame_other = frame_orig;
 switch minim_opt.type
     case MinimisationOption.T_ORIG
-        frame_out = frame_boosted;
+        frame_type_in_frame = frame_in;
     case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS}
         % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
         % original as possible.
@@ -69,12 +71,12 @@ switch minim_opt.type
         % A is a n x 2 matrix with the modulated pixels
         % b are the original withing ROI pixel 'observations' (as they are in the
         % frame)
-        n_channels = size(frame_in, 3);
+        n_channels = size(frame_other, 3);
         b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
         for c = 1:n_channels
-            chan = frame_in(:, :, c);
+            chan = frame_other(:, :, c);
             b = [b; chan(minim_area)];
-            chan = frame_boosted(:, :, c);
+            chan = frame_in(:, :, c);
             A = [A; chan(minim_area)];
         end
         A = [A ones(length(A), 1)];
@@ -85,7 +87,7 @@ switch minim_opt.type
             assert(minim_opt.type == MinimisationOption.T_WLLS)
             
             % get the weights: normalised flicker saliency
-            pyras_boosted = make_pyras(frame_boosted, lastPyrasAft);
+            pyras_boosted = make_pyras(frame_in, lastPyrasAft);
             [~, saliency_flicker] = pyras2saliency(pyras_boosted);
             SF_minim_area = saliency_flicker(minim_area);
             % TODO(zori) The flicker saliency values should be positive (not 
@@ -108,15 +110,83 @@ switch minim_opt.type
         % phi = p(2);
         lls_out = A * p;
         lls_out = reshape(lls_out, length(lls_out) ./ n_channels, n_channels);
-        frame_lls = zeros(size(frame_boosted));
+        frame_lls = zeros(size(frame_in));
         for c = 1:n_channels
-            chan = frame_boosted(:, :, c);
+            chan = frame_in(:, :, c);
             chan(minim_area) = lls_out(:, c);
             frame_lls(:, :, c) = chan;
         end
-        frame_out = frame_lls;
+        frame_type_in_frame = frame_lls;
     otherwise, exit('Unknown minimisation type option');
 end
+% this assignment will be overriden after the next switch
+% frame_out = frame_type_in_frame;
+
+% TODO(zori) DRY! Refactor repetition with the above minimisation
+frame_in = frame_type_in_frame;
+frame_other = frame_prev_edited;
+switch minim_opt.temp
+    case MinimisationOption.TEMP_O
+        frame_type_between_frames = frame_in;
+    case {MinimisationOption.TEMP_L, MinimisationOption.TEMP_W}
+        % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
+        % previous modulated as possible.
+        
+        % (weighted) LLS
+        % Want to solve: Ap = b for unknown parameters p = [Theta phi]';
+        % A is a n x 2 matrix with the modulated pixels
+        % b are the original withing ROI pixel 'observations' (as they are in the
+        % frame)
+        n_channels = size(frame_other, 3);
+        b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
+        for c = 1:n_channels
+            chan = frame_other(:, :, c);
+            b = [b; chan(minim_area)];
+            chan = frame_in(:, :, c);
+            A = [A; chan(minim_area)];
+        end
+        A = [A ones(length(A), 1)];
+        
+        if minim_opt.temp == MinimisationOption.TEMP_L
+            p = A \ b;
+        else
+            assert(minim_opt.temp == MinimisationOption.TEMP_W)
+            
+            % get the weights: normalised flicker saliency
+            pyras_boosted = make_pyras(frame_in, lastPyrasAft);
+            [~, saliency_flicker] = pyras2saliency(pyras_boosted);
+            SF_minim_area = saliency_flicker(minim_area);
+            % TODO(zori) The flicker saliency values should be positive (not 
+            % just non-negative), as they are used as weights in the
+            % minimisation. 
+            % But in most cases saliency flicker contains 0. Is it always true?
+            % What should be done in those cases?
+            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
+            assert(all(SF_minim_area) >= 0)
+            SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
+            FW = repmat(SF_minim_area, n_channels, 1);
+            % % the following creates a huge matrix
+            % DFW = diag(FW);
+            % p = (A' * DFW * A) \ (A' * DFW * b);
+            % % instead, precalculate: define AFW, such that AFW == A' * DFW
+            AFW = [A(:,1) .* FW FW]';
+            p = (AFW * A) \ (AFW * b);
+        end
+        % Theta = p(1);
+        % phi = p(2);
+        lls_out = A * p;
+        lls_out = reshape(lls_out, length(lls_out) ./ n_channels, n_channels);
+        frame_lls = zeros(size(frame_in));
+        for c = 1:n_channels
+            chan = frame_in(:, :, c);
+            chan(minim_area) = lls_out(:, c);
+            frame_lls(:, :, c) = chan;
+        end
+        frame_type_between_frames = frame_lls;
+    otherwise, exit('Unknown minimisation temp option (defining the among-frames minimisation)');
+end
+frame_out = frame_type_between_frames;
+
 min_pix = min(frame_out(:));
 max_pix = max(frame_out(:));
 % TODO(zori) the values will get 'hedged' to [0, 1]; is that a problem?

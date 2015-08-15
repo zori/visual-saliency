@@ -112,7 +112,7 @@ end
 % add (W)LLS option and AREA option to output name
 minim_opt.type = MinimisationOption.T_ORIG;
 minim_opt.area = MinimisationOption.A_IMG;
-minim_opt.temp = MinimisationOption.TEMP_O;
+minim_opt.temp = MinimisationOption.TEMP_W;
 
 video_name_append = [video_name_append ' ' char(minim_opt.type)];
 video_name_append = [video_name_append ' ' char(minim_opt.area)];
@@ -188,6 +188,7 @@ mask = get_mask(curBB, writable_imgs{6});
 saliency_flicker_writers{1}.avg = zeros(n_frames, 1);
 saliency_flicker_writers{1}.avg_abs = zeros(n_frames, 1);
 pyrasAft = make_pyras(editedFrame);
+prev_edited_frame = editedFrame;
 pyras_modulated = pyrasAft;
 [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(1), saliency_flicker_writers{1}.avg_abs(1)] = ...
     pyras2saliency(pyras_modulated, writable_imgs{7});
@@ -225,10 +226,11 @@ for k = 2:n_frames % for every frame
         
         % do enhancement
         [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_opt);
+            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_opt, prev_edited_frame);
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame
+        prev_edited_frame = editedFrame;
         % re-generation of pyras
         pyrasAft = make_pyras(editedFrame, lastPyrasAft);
         % calculate gamma
