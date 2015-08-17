@@ -110,13 +110,13 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-minim_opt.type = MinimisationOption.T_ORIG;
+minim_opt.within_frame = MinimisationOption.T_LLS;
+minim_opt.temporal = MinimisationOption.TEMP_O;
 minim_opt.area = MinimisationOption.A_IMG;
-minim_opt.temp = MinimisationOption.TEMP_W;
 
-video_name_append = [video_name_append ' ' char(minim_opt.type)];
+video_name_append = [video_name_append ' ' char(minim_opt.within_frame)];
+video_name_append = [video_name_append ' ' char(minim_opt.temporal)];
 video_name_append = [video_name_append ' ' char(minim_opt.area)];
-video_name_append = [video_name_append ' ' char(minim_opt.temp)];
 
 output_video_name = [timestamp video_name_append];
 output_video_path = fullfile('..', 'experiments', opt.sequence_name);

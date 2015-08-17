@@ -59,133 +59,13 @@ end
 
 frame_in = frame_boosted;
 frame_other = frame_orig;
-switch minim_opt.type
-    case MinimisationOption.T_ORIG
-        frame_type_in_frame = frame_in;
-    case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS}
-        % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
-        % original as possible.
-        
-        % (weighted) LLS
-        % Want to solve: Ap = b for unknown parameters p = [Theta phi]';
-        % A is a n x 2 matrix with the modulated pixels
-        % b are the original withing ROI pixel 'observations' (as they are in the
-        % frame)
-        n_channels = size(frame_other, 3);
-        b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
-        for c = 1:n_channels
-            chan = frame_other(:, :, c);
-            b = [b; chan(minim_area)];
-            chan = frame_in(:, :, c);
-            A = [A; chan(minim_area)];
-        end
-        A = [A ones(length(A), 1)];
-        
-        if minim_opt.type == MinimisationOption.T_LLS
-            p = A \ b;
-        else
-            assert(minim_opt.type == MinimisationOption.T_WLLS)
-            
-            % get the weights: normalised flicker saliency
-            pyras_boosted = make_pyras(frame_in, lastPyrasAft);
-            [~, saliency_flicker] = pyras2saliency(pyras_boosted);
-            SF_minim_area = saliency_flicker(minim_area);
-            % TODO(zori) The flicker saliency values should be positive (not 
-            % just non-negative), as they are used as weights in the
-            % minimisation. 
-            % But in most cases saliency flicker contains 0. Is it always true?
-            % What should be done in those cases?
-            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
-            assert(all(SF_minim_area) >= 0)
-            SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
-            FW = repmat(SF_minim_area, n_channels, 1);
-            % % the following creates a huge matrix
-            % DFW = diag(FW);
-            % p = (A' * DFW * A) \ (A' * DFW * b);
-            % % instead, precalculate: define AFW, such that AFW == A' * DFW
-            AFW = [A(:,1) .* FW FW]';
-            p = (AFW * A) \ (AFW * b);
-        end
-        % Theta = p(1);
-        % phi = p(2);
-        lls_out = A * p;
-        lls_out = reshape(lls_out, length(lls_out) ./ n_channels, n_channels);
-        frame_lls = zeros(size(frame_in));
-        for c = 1:n_channels
-            chan = frame_in(:, :, c);
-            chan(minim_area) = lls_out(:, c);
-            frame_lls(:, :, c) = chan;
-        end
-        frame_type_in_frame = frame_lls;
-    otherwise, exit('Unknown minimisation type option');
-end
-% this assignment will be overriden after the next switch
-% frame_out = frame_type_in_frame;
+frame_type_within_frame = minim_within_frame(frame_in, frame_other, minim_area, minim_opt.within_frame, lastPyrasAft);
 
-% TODO(zori) DRY! Refactor repetition with the above minimisation
-frame_in = frame_type_in_frame;
+frame_in = frame_type_within_frame;
 frame_other = frame_prev_edited;
-switch minim_opt.temp
-    case MinimisationOption.TEMP_O
-        frame_type_between_frames = frame_in;
-    case {MinimisationOption.TEMP_L, MinimisationOption.TEMP_W}
-        % (Weighted) LLS minimisation to keeps appearance within ROI as similar to the
-        % previous modulated as possible.
-        
-        % (weighted) LLS
-        % Want to solve: Ap = b for unknown parameters p = [Theta phi]';
-        % A is a n x 2 matrix with the modulated pixels
-        % b are the original withing ROI pixel 'observations' (as they are in the
-        % frame)
-        n_channels = size(frame_other, 3);
-        b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
-        for c = 1:n_channels
-            chan = frame_other(:, :, c);
-            b = [b; chan(minim_area)];
-            chan = frame_in(:, :, c);
-            A = [A; chan(minim_area)];
-        end
-        A = [A ones(length(A), 1)];
-        
-        if minim_opt.temp == MinimisationOption.TEMP_L
-            p = A \ b;
-        else
-            assert(minim_opt.temp == MinimisationOption.TEMP_W)
-            
-            % get the weights: normalised flicker saliency
-            pyras_boosted = make_pyras(frame_in, lastPyrasAft);
-            [~, saliency_flicker] = pyras2saliency(pyras_boosted);
-            SF_minim_area = saliency_flicker(minim_area);
-            % TODO(zori) The flicker saliency values should be positive (not 
-            % just non-negative), as they are used as weights in the
-            % minimisation. 
-            % But in most cases saliency flicker contains 0. Is it always true?
-            % What should be done in those cases?
-            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
-            assert(all(SF_minim_area) >= 0)
-            SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
-            FW = repmat(SF_minim_area, n_channels, 1);
-            % % the following creates a huge matrix
-            % DFW = diag(FW);
-            % p = (A' * DFW * A) \ (A' * DFW * b);
-            % % instead, precalculate: define AFW, such that AFW == A' * DFW
-            AFW = [A(:,1) .* FW FW]';
-            p = (AFW * A) \ (AFW * b);
-        end
-        % Theta = p(1);
-        % phi = p(2);
-        lls_out = A * p;
-        lls_out = reshape(lls_out, length(lls_out) ./ n_channels, n_channels);
-        frame_lls = zeros(size(frame_in));
-        for c = 1:n_channels
-            chan = frame_in(:, :, c);
-            chan(minim_area) = lls_out(:, c);
-            frame_lls(:, :, c) = chan;
-        end
-        frame_type_between_frames = frame_lls;
-    otherwise, exit('Unknown minimisation temp option (defining the among-frames minimisation)');
-end
-frame_out = frame_type_between_frames;
+frame_out_type_temporal = minim_temporal(frame_in, frame_other, minim_area, minim_opt.temporal, lastPyrasAft);
+
+frame_out = frame_out_type_temporal;
 
 min_pix = min(frame_out(:));
 max_pix = max(frame_out(:));
