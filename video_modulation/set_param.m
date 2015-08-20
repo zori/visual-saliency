@@ -113,7 +113,8 @@ function [ ] = set_param( )
     param.chroplot_nImageDots = 50;
     param.chroplot_nROIDots = 50;
 
-    % % NEW(zori) boosting statistics
+    % % NEW(zori)
+    % boosting statistics
     % param.modu_frame_calls = 0; % not needed, param.nFrames - 1, as expected;
     % the first call is to modu_1st_frame())
     % param.maxROI_nz = 0;
@@ -124,4 +125,7 @@ function [ ] = set_param( )
     param.ROI_sal = zeros(1, param.nFrames); % sum of the saliency of the ROI pixels
     param.nROI_pixels = zeros(1, param.nFrames); % number of the ROI pixels
 
+    % out-of-range modulated values
+    param.frames_out_of_range_modulated_vals = 0; % number of frames (out of param.nFrames - 1, as we don't modulate the first frame)
+    param.num_out_of_range_modulated_vals = 0; % total number of out-of-range modulated pixels: from all 3 channels (RGB) from the whole video
 end

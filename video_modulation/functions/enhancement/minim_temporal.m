@@ -35,12 +35,11 @@ switch minim_type
             pyras_boosted = make_pyras(frame_in, lastPyrasAft);
             [~, saliency_flicker] = pyras2saliency(pyras_boosted);
             SF_minim_area = saliency_flicker(minim_area);
-            % TODO(zori) The flicker saliency values should be positive (not 
-            % just non-negative), as they are used as weights in the
-            % minimisation. 
-            % But in most cases saliency flicker contains 0. Is it always true?
-            % What should be done in those cases?
-            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
+            % The flicker saliency values should be positive (not just
+            % non-negative), as they are used as weights in the minimisation.
+            % `saliency_flicker' is normalised in [0,1]; when we use the whole
+            % image (as opposed to ROI), there is ~1 zero-valued pixel (which
+            % isn't a problem for the minimisation)
             assert(all(SF_minim_area) >= 0)
             SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
             FW = repmat(SF_minim_area, n_channels, 1);

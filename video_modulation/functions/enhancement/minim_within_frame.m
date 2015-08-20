@@ -5,7 +5,8 @@ function frame_out = minim_within_frame(frame_in, frame_other, minim_area, minim
 switch minim_type
     case MinimisationOption.T_ORIG
         frame_out = frame_in;
-    case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS}
+    case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS,... 
+            MinimisationOption.T_MRLLS, MinimisationOption.T_MSLLS}
         % (Weighted) LLS minimisation to keeps appearance of pixels denoted by
         % the mask in `minim_area' as similar as possible to the original.
         
@@ -23,30 +24,38 @@ switch minim_type
         end
         A = [A ones(length(A), 1)];
         
-        if minim_type == MinimisationOption.T_LLS
-            p = A \ b;
-        else
-            assert(minim_type == MinimisationOption.T_WLLS)
-            
-            % get the weights: normalised flicker saliency
-            pyras_boosted = make_pyras(frame_in, lastPyrasAft);
-            [~, saliency_flicker] = pyras2saliency(pyras_boosted);
-            SF_minim_area = saliency_flicker(minim_area);
-            % TODO(zori) The flicker saliency values should be positive (not 
-            % just non-negative), as they are used as weights in the
-            % minimisation. 
-            % But in most cases saliency flicker contains 0. Is it always true?
-            % What should be done in those cases?
-            % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
-            assert(all(SF_minim_area) >= 0)
-            SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
-            FW = repmat(SF_minim_area, n_channels, 1);
-            % % the following creates a huge matrix
-            % DFW = diag(FW);
-            % p = (A' * DFW * A) \ (A' * DFW * b);
-            % % instead, precalculate: define AFW, such that AFW == A' * DFW
-            AFW = [A(:,1) .* FW FW]';
-            p = (AFW * A) \ (AFW * b);
+        switch minim_type
+            case MinimisationOption.T_LLS
+                p = A \ b;
+            case MinimisationOption.T_MRLLS
+                disp('here T_MRLLS');
+            case MinimisationOption.T_MSLLS
+                disp('here T_MSLLS');
+            case MinimisationOption.T_WLLS
+                warning(['This code does not use the correct weighting schema '...
+                    'for minimisation (the within-frame minimisation should '...
+                    'employ modulation saliency for the minimisation, and here'...
+                    'the flicker saliency is used instead. Left for '...
+                    'reproducibility.']);
+                % get the weights: normalised flicker saliency
+                pyras_boosted = make_pyras(frame_in, lastPyrasAft);
+                [~, saliency_flicker] = pyras2saliency(pyras_boosted);
+                SF_minim_area = saliency_flicker(minim_area);
+                % TODO(zori) The flicker saliency values should be positive (not
+                % just non-negative), as they are used as weights in the
+                % minimisation.
+                % But in most cases saliency flicker contains 0. Is it always true?
+                % What should be done in those cases?
+                % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
+                assert(all(SF_minim_area) >= 0)
+                SF_minim_area = SF_minim_area / norm(SF_minim_area, 1);
+                FW = repmat(SF_minim_area, n_channels, 1);
+                % % the following creates a huge matrix
+                % DFW = diag(FW);
+                % p = (A' * DFW * A) \ (A' * DFW * b);
+                % % instead, precalculate: define AFW, such that AFW == A' * DFW
+                AFW = [A(:,1) .* FW FW]';
+                p = (AFW * A) \ (AFW * b);
         end
         % Theta = p(1);
         % phi = p(2);

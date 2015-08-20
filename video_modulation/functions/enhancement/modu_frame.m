@@ -3,15 +3,15 @@ function [ frame_out, W ] = modu_frame( frame_orig, frame_ind, diffs, mask, W_or
 %   @author Tao
 
 global param;
-% make sure choice parameters are defined
 
 % pre-enhance
 frame_enhanced = enhance(frame_orig, diffs, mask, W_orig);
 pyrasAft = make_pyras(frame_enhanced, lastPyrasAft);
 SAft = process_saliency(get_salimap(pyrasAft));
 
-% mark the location of max saliency after the modulation
+% % mark the location of max saliency after the modulation
 % figure; im(SAft); [~, maxind] = max(SAft(:)); [ri,ci] = ind2sub([r, c], maxind); hold on; plot(ci, ri, 'x');
+
 % prepare ehcA
 mask_locations = mask ~= 0;
 SROI  = SAft(mask_locations);
@@ -70,7 +70,11 @@ frame_out = frame_out_type_temporal;
 min_pix = min(frame_out(:));
 max_pix = max(frame_out(:));
 % TODO(zori) the values will get 'hedged' to [0, 1]; is that a problem?
+num_out_of_range = sum(sum(frame_out < 0 | frame_out > 1));
 if min_pix < 0 || max_pix > 1
+    assert(num_out_of_range ~= 0)
     warning(['out-of-range modulated value(s) - min: ' num2str(min_pix) '; max: ' num2str(max_pix)]);
+    param.frames_out_of_range_modulated_vals = param.frames_out_of_range_modulated_vals + 1;
+    param.num_out_of_range_modulated_vals = param.num_out_of_range_modulated_vals + num_out_of_range;
 end
 end

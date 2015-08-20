@@ -45,11 +45,11 @@ tld = tldInit(opt,[]);
 tld = tldDisplay(0,tld);
 
 %--SALIENCY-BEGIN--
-n_frames = length(tld.source.idx);
 curFrame = im2double(imread(source.files(1).name));
 [param.resY, param.resX, param.nChannel] = size(curFrame);
 % NOTE(zori): bad practice ahead: param is global, being changed in the following
 set_param();
+assert(param.nFrames == length(tld.source.idx));
 curBB = get_current_BB(1);
 
 % some basic data verification
@@ -59,7 +59,7 @@ if param.nChannel < 3
 elseif min(param.resY, param.resX) < 2^param.pyraScales
     disp('Minimise resolution should be 2^(scale of pyramid).');
     return
-elseif n_frames < param.wSpan
+elseif param.nFrames < param.wSpan
     disp('Video too short.')
     return
 end
@@ -110,8 +110,8 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-minim_opt.within_frame = MinimisationOption.T_LLS;
-minim_opt.temporal = MinimisationOption.TEMP_O;
+minim_opt.within_frame = MinimisationOption.T_ORIG; % T_MRLLS T_MSLLS;
+minim_opt.temporal = MinimisationOption.TEMP_W; % TEMP_O;
 minim_opt.area = MinimisationOption.A_IMG;
 
 video_name_append = [video_name_append ' ' char(minim_opt.within_frame)];
@@ -173,7 +173,7 @@ pyrasBef = make_pyras(curFrame);
 diffs = make_diffs(pyrasBef);
 
 % make mask
-saliency_flicker_writers{2}.avg = zeros(n_frames, 1);
+saliency_flicker_writers{2}.avg = zeros(param.nFrames, 1);
 [writable_imgs{6}, writable_imgs{7}, saliency_flicker_writers{2}.avg(1)] = ...
     pyras2saliency(pyrasBef);
 mask = get_mask(curBB, writable_imgs{6});
@@ -185,8 +185,8 @@ mask = get_mask(curBB, writable_imgs{6});
 
 % preparation for next frame
 % re-generation of pyras
-saliency_flicker_writers{1}.avg = zeros(n_frames, 1);
-saliency_flicker_writers{1}.avg_abs = zeros(n_frames, 1);
+saliency_flicker_writers{1}.avg = zeros(param.nFrames, 1);
+saliency_flicker_writers{1}.avg_abs = zeros(param.nFrames, 1);
 pyrasAft = make_pyras(editedFrame);
 prev_edited_frame = editedFrame;
 pyras_modulated = pyrasAft;
@@ -201,7 +201,7 @@ fprintf('\t%f\n', gamma);
 
 % RUN-TIME ----------------------------------------------------------------
 
-for k = 2:n_frames % for every frame
+for k = 2:param.nFrames % for every frame
     % i = 2; % TODO(zori): sanity check; always use 002.png
     i = k;
     tld = tldProcessFrame(tld,i); % process frame i
@@ -293,7 +293,7 @@ for k = 2:n_frames % for every frame
         close(2);
         
         %--SALIENCY-BEGIN--
-        on_finish(video_writers, saliency_flicker_writers);
+        on_finish(video_writers, saliency_flicker_writers, k);
         
         %---SALIENCY-END---
         
@@ -310,7 +310,7 @@ end
 %--SALIENCY-BEGIN--
 % TODO(zori) think about the 001.png: first image never gets written; double-check that, fix if possible
 for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the sequence
-    ind = i + n_frames - param.flashL;
+    ind = i + param.nFrames - param.flashL;
     [flash, W] = shift_storage(flash, W);
     
     [input_img, writable_imgs{1}, meanW, weights, weightsIdx] = smooth_frame_modulation(flash, W, weights, weightsIdx);
@@ -336,7 +336,9 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
     write_videos(video_writers, writable_imgs);
 end
 
-on_finish(video_writers, saliency_flicker_writers);
+% video modulation was not interrupted before the last frame
+assert(k == param.nFrames);
+on_finish(video_writers, saliency_flicker_writers, param.nFrames);
 
 %---SALIENCY-END---
 
@@ -505,12 +507,15 @@ stitched = cat(1, output_img, repmat(saliency, [1 1 3]), saliency_flicker_rgb);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function on_finish(video_writers, saliency_flicker_writers)
+function on_finish(video_writers, saliency_flicker_writers, cur_frame_number)
 global param;
-max_sal_outside_ROI = param.nFrames - 1 - sum(param.ROI_sal_max);
-fprintf('ZZZ: max saliency outside ROI %d\n', max_sal_outside_ROI);
+% % number of boost_HSI() calls made (out of cur_frame_number - 1, as the first
+% frame is not modulated). When execution is not terminated before the last
+% frame of the video, cur_frame_number == param.nFrames
+max_sal_outside_ROI = cur_frame_number - 1 - sum(param.ROI_sal_max);
+fprintf('number of frames w/ max saliency outside ROI: %d\n', max_sal_outside_ROI);
 
-% TODO(zori) convert all writes to file from dmlwrite to fprintf as it's only
+% TODO(zori) convert all writes to file from dlmwrite to fprintf as it's only
 % meant to be human-readable
 
 % % saliency plot
@@ -565,15 +570,25 @@ legend('original', 'modulated', 'boosting', 'Location', 'southeast');
 saveas(gcf, saliency_flicker_writers{4}.txt, 'jpg');
 
 % % stats
-dlmwrite(saliency_flicker_writers{1}.txt, [max_sal_outside_ROI], 'delimiter', ',');
+dlmwrite(saliency_flicker_writers{1}.txt, max_sal_outside_ROI);
+for k = 1:param.n_batches
+    frame_avg = saliency_flicker_writers{k}.avg; % vector of length param.nFrames with the avg saliency_flicker values per frame (absolute or relative to the original, for the modulated)
+    dlmwrite(saliency_flicker_writers{k}.txt,...
+        [mean(frame_avg)...
+        std(frame_avg)...
+        ], '-append', 'roffset', 1);
+end
+
+dlmwrite(saliency_flicker_writers{1}.txt,...
+    [param.frames_out_of_range_modulated_vals...
+    param.num_out_of_range_modulated_vals...
+    ], '-append', 'roffset', 1);
 
 assert(length(video_writers) == param.n_output_videos);
 for k = 1:param.n_output_videos
     close(video_writers{k});
 end
 for k = 1:param.n_batches
-    frame_avg = saliency_flicker_writers{k}.avg; % vector of length n_frames with the avg saliency_flicker values per frame (absolute or relative to the original, for the modulated)
-    dlmwrite(saliency_flicker_writers{k}.txt, [mean(frame_avg) std(frame_avg)], 'delimiter', ',', '-append', 'roffset', 1);
     dlmwrite(saliency_flicker_writers{k}.txt, saliency_flicker_writers{k}.avg', ...
         '-append', 'roffset', 1, 'delimiter', ' ');
 end
