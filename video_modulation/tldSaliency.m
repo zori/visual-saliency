@@ -110,7 +110,7 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-minim_opt.within_frame = MinimisationOption.T_ORIG; % T_MRLLS T_MSLLS;
+minim_opt.within_frame = MinimisationOption.T_ORIG; % T_DLLS;
 minim_opt.temporal = MinimisationOption.TEMP_W; % TEMP_O;
 minim_opt.area = MinimisationOption.A_IMG;
 
@@ -225,8 +225,9 @@ for k = 2:param.nFrames % for every frame
         mask = get_mask(curBB, writable_imgs{6});
         
         % do enhancement
-        [editedFrame, W(:,:,1)] = ...
-            modu_frame(curFrame, k, diffs, mask, W(:,:,2)*gamma, lastPyrasAft, minim_opt, prev_edited_frame);
+        [editedFrame, W(:,:,1)] = modu_frame(curFrame, k, diffs, mask,...
+            W(:,:,2)*gamma, lastPyrasAft, minim_opt, prev_edited_frame,...
+            writable_imgs{6});
         [flash, W] = store_and_shift(flash, W, curFrame, diffs, mask, curBB);
         
         % preparation for next frame

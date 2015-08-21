@@ -13,8 +13,9 @@ classdef MinimisationOption
         T_LLS % non-weighted linear least squares
         T_WLLS % flicker-saliency weighted LLS; note these are the wrong weights to use for this minimisation, but keep the code for reproducibility
         % modulation-saliency weighted LLS; these should be the correct weighting for this problem
-        T_MRLLS % take the reciprocal of the modulation saliency
-        T_MSLLS % subtract the modulation saliency from 1
+        T_DLLS % use the absolute difference between the modulation saliency before and after enhancing&boosting the frame
+        T_RLLS % take the reciprocal of the modulation saliency
+        T_SLLS % subtract the modulation saliency from 1
     end
     % temporal (between this and the previous frame) type of minimisation
     enumeration

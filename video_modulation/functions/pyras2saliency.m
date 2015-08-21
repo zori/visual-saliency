@@ -30,9 +30,11 @@ function [saliency, saliency_flicker, frame_avg, frame_avg_abs] = pyras2saliency
 % is passed too; subtract, to only reason about the difference
 if nargin == 2
     [~, ~, frame_avg_abs] = pyras2saliency(pyras);
-    saliency_flicker = saliency_flicker - orig_saliency_flicker;
+    saliency_flicker_relative = saliency_flicker - orig_saliency_flicker;
+    saliency_flicker_relative_abs_avg = mean(abs(saliency_flicker_relative(:)));
     orig_frame_avg = mean(orig_saliency_flicker(:));
-    frame_avg = mean(abs(saliency_flicker(:))) ./ (orig_frame_avg + (orig_frame_avg == 0));
+    frame_avg = safe_divide(saliency_flicker_relative_abs_avg, orig_frame_avg);
+    saliency_flicker = saliency_flicker_relative;
 else
     assert(all(saliency_flicker(:) >= 0));
     frame_avg = mean(saliency_flicker(:));

@@ -1,4 +1,5 @@
-function [ frame_out, W ] = modu_frame( frame_orig, frame_ind, diffs, mask, W_orig, lastPyrasAft, minim_opt, frame_prev_edited )
+function [ frame_out, W ] = modu_frame(frame_orig, frame_ind, diffs, mask,...
+    W_orig, lastPyrasAft, minim_opt, frame_prev_edited, cur_modu_saliency)
 %MODU_FRAME modulation of given frame, with updated W returned
 %   @author Tao
 
@@ -39,7 +40,7 @@ param.ehcA = param.k_a * (1 - maxROI); % param.ehcA becomes 0 if maxROI == 1, re
 % get weights
 maskPyra = gauss_pyra(mask);
 [frame_boosted, deltaW] = boost_HSI(frame_enhanced, diffs, maskPyra);
-% TODO(zori) remove the extra boosting, temporarily, to see how statistics
+% % remove the extra boosting, temporarily, to see how statistics
 % change
 % deltaW = zeros(size(W)); frame_out = frame_enhanced;
 
@@ -57,20 +58,42 @@ switch minim_opt.area
     otherwise, exit('Unknown minimisation area option');
 end
 
+pyras_after_boosting = make_pyras(frame_boosted, lastPyrasAft);
+modu_saliency_after_boosting = process_saliency(get_salimap(pyras_after_boosting));
+
+% % Experiment with changing the order of the minimisation operations
+
 frame_in = frame_boosted;
 frame_other = frame_orig;
-frame_type_within_frame = minim_within_frame(frame_in, frame_other, minim_area, minim_opt.within_frame, lastPyrasAft);
+frame_type_within_frame = minim_within_frame(frame_in, frame_other,...
+    minim_area, minim_opt.within_frame, lastPyrasAft, cur_modu_saliency,...
+    modu_saliency_after_boosting);
 
 frame_in = frame_type_within_frame;
 frame_other = frame_prev_edited;
-frame_out_type_temporal = minim_temporal(frame_in, frame_other, minim_area, minim_opt.temporal, lastPyrasAft);
-
+frame_out_type_temporal = minim_temporal(frame_in, frame_other,...
+    minim_area, minim_opt.temporal, lastPyrasAft);
 frame_out = frame_out_type_temporal;
 
-min_pix = min(frame_out(:));
-max_pix = max(frame_out(:));
+% frame_in = frame_boosted;
+% frame_other = frame_prev_edited;
+% frame_out_type_temporal = minim_temporal(frame_in, frame_other,...
+%     minim_area, minim_opt.temporal, lastPyrasAft);
+% 
+% 
+% frame_in = frame_out_type_temporal;
+% frame_other = frame_orig;
+% frame_type_within_frame = minim_within_frame(frame_in, frame_other,...
+%     minim_area, minim_opt.within_frame, lastPyrasAft, cur_modu_saliency,...
+%     modu_saliency_after_boosting);
+% frame_out = frame_type_within_frame;
+
+frame_out_v = frame_out(:);
+
+min_pix = min(frame_out_v);
+max_pix = max(frame_out_v);
 % TODO(zori) the values will get 'hedged' to [0, 1]; is that a problem?
-num_out_of_range = sum(sum(frame_out < 0 | frame_out > 1));
+num_out_of_range = sum(sum(frame_out_v < 0 | frame_out_v > 1));
 if min_pix < 0 || max_pix > 1
     assert(num_out_of_range ~= 0)
     warning(['out-of-range modulated value(s) - min: ' num2str(min_pix) '; max: ' num2str(max_pix)]);
