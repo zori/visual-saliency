@@ -326,11 +326,9 @@ for i = 1:param.flashL % |flash| keeps the last |param.flashL| frames from the s
     end
     % pyras_modulated = pyrasBef; % TODO(zori) I think yes
     pyras_modulated = make_pyras(writable_imgs{1}, pyrasBef);
-    % TODO(zori) iind = ind - param.flashL; ? needed?
-    iind = ind - param.flashL + 1;
-    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(iind), saliency_flicker_writers{1}.avg_abs(iind)] = ...
+    [writable_imgs{2}, writable_imgs{3}, saliency_flicker_writers{1}.avg(ind), saliency_flicker_writers{1}.avg_abs(ind)] = ...
         pyras2saliency(pyras_modulated, writable_imgs{7});
-    if saliency_flicker_writers{1}.avg_abs(iind) <= saliency_flicker_writers{2}.avg(iind)
+    if saliency_flicker_writers{1}.avg_abs(ind) <= saliency_flicker_writers{2}.avg(ind)
         % warning('(at ind) modulated saliency flicker lower than original one');
     end
     if param.write_orig, writable_imgs{5} = input_img; end
