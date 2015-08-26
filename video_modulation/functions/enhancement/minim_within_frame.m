@@ -9,23 +9,7 @@ switch minim_type
     case {MinimisationOption.T_LLS, MinimisationOption.T_WLLS,... 
             MinimisationOption.T_DLLS, MinimisationOption.T_RLLS,...
             MinimisationOption.T_SLLS}
-        % (Weighted) LLS minimisation to keeps appearance of pixels denoted by
-        % the mask in `minim_area' as similar as possible to the original.
-        
-        % (weighted) LLS
-        % Want to solve: Ap = b for unknown parameters p = [Theta phi]';
-        % A is a n x 2 matrix with the modulated pixels
-        % b are the minim_area pixel 'observations' (as they are in frame_other)
-        n_channels = size(frame_other, 3);
-        b = []; A = [];  % TODO(zori) use ROI_n * n_channels to pre-allocate
-        for c = 1:n_channels
-            chan = frame_other(:, :, c);
-            b = [b; chan(minim_area)];
-            chan = frame_in(:, :, c);
-            A = [A; chan(minim_area)];
-        end
-        A = [A ones(length(A), 1)];
-        
+        [A, b] = make_LLS_design_matrix(frame_in, frame_other, minim_area);        
         switch minim_type
             case MinimisationOption.T_LLS
                 p = A \ b;
@@ -54,28 +38,9 @@ switch minim_type
                         [~, saliency_flicker] = pyras2saliency(pyras_boosted);
                         weight = saliency_flicker;
                 end
-                minim_area_weight = weight(minim_area);
-                assert(all(minim_area_weight) >= 0)
-                minim_area_weight = minim_area_weight / norm(minim_area_weight, 1);
-                FW = repmat(minim_area_weight, n_channels, 1);
-                % % the following creates a huge matrix
-                % DFW = diag(FW);
-                % p = (A' * DFW * A) \ (A' * DFW * b);
-                % % instead, precalculate: define AFW, such that AFW == A' * DFW
-                AFW = [A(:,1) .* FW FW]';
-                p = (AFW * A) \ (AFW * b);
+                p = weighted_LLS_minimise(weight, minim_area, A, b);
         end
-        % Theta = p(1);
-        % phi = p(2);
-        minim_out = A * p;
-        minim_out = reshape(minim_out, length(minim_out) ./ n_channels, n_channels);
-        frame_minim = zeros(size(frame_in));
-        for c = 1:n_channels
-            chan = frame_in(:, :, c);
-            chan(minim_area) = minim_out(:, c);
-            frame_minim(:, :, c) = chan;
-        end
-        frame_out = frame_minim;
+        frame_out = compute_LLS_result(frame_in, minim_area, A, p);
     otherwise, exit('Unknown within-frame minimisation option');
 end
 end
