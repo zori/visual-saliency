@@ -110,8 +110,12 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-minim_opt.within_frame = MinimisationOption.T_ORIG; % T_DLLS;
-minim_opt.temporal = MinimisationOption.TEMP_W; % TEMP_O;
+minim_opt.within_frame = MinimisationOption.T_ORIG; % T_ORIG % T_DLLS; % T_SLLS % T_RLLS
+% TODO(zori) test the reciprocal of the saliency
+% minim_opt.within_frame = MinimisationOption.T_RLLS;
+% minim_opt.temporal = MinimisationOption.TEMP_W; % TEMP_O;
+% choosing a weighting mapping:
+minim_opt.temporal = MinimisationOption.TEMP_WSQRT; % TEMP_WLOG % TEMP_WREC % TEMP_WEXPREC
 minim_opt.area = MinimisationOption.A_IMG;
 
 video_name_append = [video_name_append ' ' char(minim_opt.within_frame)];

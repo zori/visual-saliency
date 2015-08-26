@@ -44,6 +44,12 @@ function [ pyras ] = make_pyras( varargin )
     
     if nargin > 1
         pyras.F = gauss_pyra(I - lastPyras.I{1}); % flicker
+        if any(isnan(pyras.F{9}(:)))
+            % TODO(zori) that usually happens if we build pyramids from the zero
+            % matrix, i.e., the two images are identical
+            disp('NaN in pyras.F')
+            % keyboard
+        end
         pyras.M = cellfun(@(a,b,c,d) (abs(a.*b - c.*d)), ... % motion
                           pyras.O, lastPyras.S, lastPyras.O, pyras.S, ...
                           'UniformOutput', false);

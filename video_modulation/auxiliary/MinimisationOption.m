@@ -21,6 +21,13 @@ classdef MinimisationOption
     enumeration
         TEMP_O % original code, as Tao SHI implemented it, no minimisation
         TEMP_L % LLS
-        TEMP_W % weighted LLS
+        TEMP_W % weighted LLS % deprecated, use TEMP_WLIN
+        TEMP_WLIN     % linear mapping function; same as TEMP_W
+        TEMP_WEXP     % exp(x)
+        TEMP_WSQ      % x^2
+        TEMP_WSQRT    % x^0.5
+        TEMP_WLOG     % log(x+1)
+        TEMP_WREC     % 1 - 1/(x+1)
+        TEMP_WEXPREC  % e - exp(1/(x+1))
     end
 end
