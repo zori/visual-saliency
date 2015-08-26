@@ -33,12 +33,16 @@ switch minim_type
                     MinimisationOption.T_RLLS, MinimisationOption.T_SLLS}
                 switch minim_type
                     case MinimisationOption.T_DLLS
-                        abs_sal_diff = abs(cur_modu_saliency - modu_saliency_after_boosting);
-                        minim_area_weight = abs_sal_diff(minim_area);
+                        % take as weight the absolute difference of modulation
+                        % saliencies
+                        weight = abs(cur_modu_saliency - modu_saliency_after_boosting);
                     case MinimisationOption.T_RLLS
-                        disp('here T_RLLS');
+                        % TODO(zori) is that suitable?
+                        % weight = 1 ./ (1 + cur_modu_saliency);
+                        weight = 1 ./ (1 + modu_saliency_after_boosting);
                     case MinimisationOption.T_SLLS
-                        disp('here T_SLLS');
+                        % weight = 1 - cur_modu_saliency;
+                        weight = 1 - modu_saliency_after_boosting;
                     case MinimisationOption.T_WLLS
                         warning(['This code does not use the correct weighting schema '...
                             'for minimisation (the within-frame minimisation should '...
@@ -48,14 +52,9 @@ switch minim_type
                         % get the weights: normalised flicker saliency
                         pyras_boosted = make_pyras(frame_in, lastPyrasAft);
                         [~, saliency_flicker] = pyras2saliency(pyras_boosted);
-                        minim_area_weight = saliency_flicker(minim_area);
+                        weight = saliency_flicker;
                 end
-                % TODO(zori) The flicker saliency values should be positive (not
-                % just non-negative), as they are used as weights in the
-                % minimisation.
-                % But in most cases saliency flicker contains 0. Is it always true?
-                % What should be done in those cases?
-                % if any(SF_minim_area == 0), disp('saliency flicker contains 0'); end
+                minim_area_weight = weight(minim_area);
                 assert(all(minim_area_weight) >= 0)
                 minim_area_weight = minim_area_weight / norm(minim_area_weight, 1);
                 FW = repmat(minim_area_weight, n_channels, 1);
