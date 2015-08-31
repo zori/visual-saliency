@@ -63,6 +63,7 @@ modu_saliency_after_boosting = process_saliency(get_salimap(pyras_after_boosting
 
 % % Experiment with changing the order of the minimisation operations
 
+% the better option is enhance&boost -> within-frame -> temporal
 frame_in = frame_boosted;
 frame_other = frame_orig;
 frame_type_within_frame = minim_within_frame(frame_in, frame_other,...
@@ -75,6 +76,7 @@ frame_out_type_temporal = minim_temporal(frame_in, frame_other,...
     minim_area, minim_opt.temporal, lastPyrasAft);
 frame_out = frame_out_type_temporal;
 
+% % enhance&boost -> temporal -> within-frame
 % frame_in = frame_boosted;
 % frame_other = frame_prev_edited;
 % frame_out_type_temporal = minim_temporal(frame_in, frame_other,...
@@ -87,17 +89,4 @@ frame_out = frame_out_type_temporal;
 %     minim_area, minim_opt.within_frame, lastPyrasAft, cur_modu_saliency,...
 %     modu_saliency_after_boosting);
 % frame_out = frame_type_within_frame;
-
-frame_out_v = frame_out(:);
-
-min_pix = min(frame_out_v);
-max_pix = max(frame_out_v);
-% TODO(zori) the values will get 'hedged' to [0, 1]; is that a problem?
-num_out_of_range = sum(sum(frame_out_v < 0 | frame_out_v > 1));
-if min_pix < 0 || max_pix > 1
-    assert(num_out_of_range ~= 0)
-    warning(['out-of-range modulated value(s) - min: ' num2str(min_pix) '; max: ' num2str(max_pix)]);
-    param.frames_out_of_range_modulated_vals = param.frames_out_of_range_modulated_vals + 1;
-    param.num_out_of_range_modulated_vals = param.num_out_of_range_modulated_vals + num_out_of_range;
-end
 end

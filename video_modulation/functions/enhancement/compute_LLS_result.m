@@ -15,4 +15,10 @@ for c = 1:param.nChannel
     frame_minim(:, :, c) = chan;
 end
 frame_out = frame_minim;
+% For minim_within_frame out-of-range values (i.e, smaller than 0 and larger 
+% than 1) occur. Hedging those increases flicker saliency. So don't do it.
+% [~, ~, ~, frame_out] = check_out_of_range_values(frame_out);
+
+% this won't hedge out-of-range values, just records the statistics
+check_out_of_range_values(frame_out);
 end

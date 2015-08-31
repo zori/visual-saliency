@@ -23,6 +23,9 @@ switch minim_type
                         % linear
                     case MinimisationOption.TEMP_WEXP
                         weight = exp(weight);
+                        % multiplicative constant doesn't matter, because of the
+                        % normalisation
+                        % weight = 0.5 * exp(weight);
                     case MinimisationOption.TEMP_WSQ
                         weight = weight.^2;
                     case MinimisationOption.TEMP_WSQRT

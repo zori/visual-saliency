@@ -11,7 +11,7 @@ classdef MinimisationOption
     enumeration
         T_ORIG % original code, as Tao SHI implemented it, no minimisation
         T_LLS % non-weighted linear least squares
-        T_WLLS % flicker-saliency weighted LLS; note these are the wrong weights to use for this minimisation, but keep the code for reproducibility
+        T_WLLS % deprecated % flicker-saliency weighted LLS; note these are the wrong weights to use for this minimisation, but keep the code for reproducibility
         % modulation-saliency weighted LLS; these should be the correct weighting for this problem
         T_DLLS % use the absolute difference between the modulation saliency before and after enhancing&boosting the frame
         T_RLLS % take the reciprocal of the modulation saliency
@@ -21,7 +21,7 @@ classdef MinimisationOption
     enumeration
         TEMP_O % original code, as Tao SHI implemented it, no minimisation
         TEMP_L % LLS
-        TEMP_W % weighted LLS % deprecated, use TEMP_WLIN
+        TEMP_W % deprecated, use TEMP_WLIN % weighted LLS
         TEMP_WLIN     % linear mapping function; same as TEMP_W
         TEMP_WEXP     % exp(x)
         TEMP_WSQ      % x^2
