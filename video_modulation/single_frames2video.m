@@ -3,7 +3,7 @@
 % 8.5.0.197613 (R2015a)
 function single_frames2video(video_folder, n_frames)
 % for example:
-% video_folder = 'dataset/video/orig_city_300'
+% video_folder = 'dataset/video/orig_city_352x288_30_300'
 % n_frames = 300
 img_extension = 'png';
 video_extension = 'avi';
