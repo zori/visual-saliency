@@ -14,16 +14,28 @@ init_workspace;
 
 % EDIT(zori) I will only work with these two sequences, as ROIs can be chosen so
 % that the tracker doesn't lose the object until the end of the video.
-opt.sequence_name   = 'etdb_MOBILE_352x288_30_300';
-opt.sequence_name   = 'orig_city_300';
+suffix = '_352x288_30_300';
 
-opt.modulation = 1; % 1 - no smoothing, 2 - simple averaging within a 6-frame window, or 3 - exponential smoothing
-opt.smoothing_param_recipr = 3; % 3, 7
+opt.sequence_name   = 'etdb_MOBILE';
+opt.sequence_name   = 'orig_city';
+
+% opt.sequence_name   = 'baseball';
+% opt.sequence_name   = 'beach';
+% opt.sequence_name   = 'canal';
+% opt.sequence_name   = 'newport';
+% opt.sequence_name   = 'palace';
+% opt.sequence_name   = 'vegas';
+
+opt.sequence_name = [opt.sequence_name suffix];
+
+% 1 - no smoothing, 2 - simple averaging within a 6-frame window, or 3 - exponential smoothing
+opt.modulation = 3;
+opt.smoothing_param_recipr = 7; % 3, 7
 
 % opt.source          = struct('init_bb_name','init3.txt',... % init3 is just a
 % copy of init2; used to indicate in the output files of the experiment that
 % only the upper-right corner of the bounding box is considered for modulation (the single-pixel experiment) 
-opt.source          = struct('init_bb_name','init2.txt',... % bounding box file
+opt.source          = struct('init_bb_name','init3.txt',... % bounding box file
     'camera',0,...
     'input',fullfile('dataset','video',opt.sequence_name,filesep),...
     'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
