@@ -10,3 +10,6 @@ experiments/
 video_modulation/dataset/video/SFU_etdb/CSV/foreman-Screen_backup.csv
 video_modulation/dataset/video/SFU_etdb/CSV/foreman-Screen_orig.csv
 video_modulation/dataset/video/SFU_etdb/CSV/foreman-mask_orig.csv
+
+" dataset files that are not necessary (intermediate steps to obtain the dataset)
+00_archive
