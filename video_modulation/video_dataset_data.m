@@ -8,16 +8,24 @@
 suffix = '_352x288_30_300';
 
 sequence_names_old = {
-    'orig_city',... % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
-    'etdb_MOBILE'... % init1 (pigs; larger); init2 (yellow goat head; smaller); init3 (long narrow area under the "head" of the tower)
+    'orig_city' % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
+    'etdb_MOBILE' % init1 (pigs; larger); init2 (yellow goat head; smaller); init3 (long narrow area under the "head" of the tower)
     };
 
 sequence_names_new = {
-    'beach',...
-    'newport',...
-	'palace',...
+    'beach'
+    'newport'
+	'palace'
     'vegas'
-    };
+    }';
+
+% those were not used in the eye-tracking experiment, but for the dummy video
+% shown before the actual eye-tracking recording begins
+% both sequences only have defined initial regions 'init1.txt', 'init2.txt'
+sequence_names_extra = {
+    'baseball'
+    'canal'
+    }';
 
 sequence_names = [sequence_names_old sequence_names_new];
 
