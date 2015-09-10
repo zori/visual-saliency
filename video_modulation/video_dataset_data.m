@@ -11,7 +11,7 @@ suffix = '_352x288_30_300';
 % these sequences, as ROIs can be chosen so that the tracker doesn't lose the
 % object until the end of the video.
 sequence_names_old = {
-    'orig_city' % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
+    'orig_city' % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger); init3 (new, by Zori: long thin part of tower in the main building)
     'etdb_MOBILE' % init1 (pigs; larger); init2 (yellow goat head; smaller); init3 (long narrow area under the "head" of the tower)
     }';
 
