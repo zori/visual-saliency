@@ -7,10 +7,13 @@
 
 suffix = '_352x288_30_300';
 
+% Most videos in video_dataset_data_old are not suitable. I will only work with
+% these sequences, as ROIs can be chosen so that the tracker doesn't lose the
+% object until the end of the video.
 sequence_names_old = {
     'orig_city' % init1 (tower_bell_orig; smaller); init2 (init_1C - main building part; larger)
     'etdb_MOBILE' % init1 (pigs; larger); init2 (yellow goat head; smaller); init3 (long narrow area under the "head" of the tower)
-    };
+    }';
 
 sequence_names_new = {
     'beach'

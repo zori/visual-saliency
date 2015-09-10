@@ -12,19 +12,20 @@ init_workspace;
 % opt.sequence_name   = 'etdb_stefan_cif_90';
 % opt.sequence_name   = 'etdb_tempete_cif_260';
 
-% EDIT(zori) I will only work with these two sequences, as ROIs can be chosen so
-% that the tracker doesn't lose the object until the end of the video.
-suffix = '_352x288_30_300';
+video_dataset_data();
 
-opt.sequence_name   = 'etdb_MOBILE';
-opt.sequence_name   = 'orig_city';
+% opt.sequence_name   = 'etdb_MOBILE';
+% opt.sequence_name   = 'orig_city';
 
 % opt.sequence_name   = 'baseball';
-% opt.sequence_name   = 'beach';
 % opt.sequence_name   = 'canal';
+
+% opt.sequence_name   = 'beach';
 % opt.sequence_name   = 'newport';
-% opt.sequence_name   = 'palace';
+opt.sequence_name   = 'palace';
 % opt.sequence_name   = 'vegas';
+
+initial_region = 'init3.txt';
 
 opt.sequence_name = [opt.sequence_name suffix];
 
@@ -32,16 +33,14 @@ opt.sequence_name = [opt.sequence_name suffix];
 opt.modulation = 3;
 opt.smoothing_param_recipr = 7; % 3, 7
 
-% opt.source          = struct('init_bb_name','init3.txt',... % init3 is just a
-% copy of init2; used to indicate in the output files of the experiment that
-% only the upper-right corner of the bounding box is considered for modulation (the single-pixel experiment) 
-opt.source          = struct('init_bb_name','init3.txt',... % bounding box file
-    'camera',0,...
-    'input',fullfile('dataset','video',opt.sequence_name,filesep),...
-    'bb0',[]); % camera/directory swith, directory_name, initial_bounding_box (if empty, it will be selected by the user)
-opt.output          = 'TLD_source/_output/'; mkdir(opt.output); % output directory that will contain bounding boxes + confidence
+opt.source          = struct('init_bb_name', initial_region,... % bounding box file
+    'camera', 0, ... % camera/directory swith
+    'input', fullfile('dataset', 'video', opt.sequence_name, filesep),... % directory_name
+    'bb0', []); % depricated, 'init_bb_name' is used now % initial_bounding_box (if empty, it will be selected by the user)
 
-% min_win             = 1;
+opt.output          = 'TLD_source/_output/';
+mkdir(opt.output); % output directory that will contain bounding boxes + confidence
+
 min_win             = 10; % minimal size of the object's bounding box in the scanning grid, it may significantly influence speed of TLD, set it to minimal size of the object
 patchsize           = [30 30]; % size of normalized patch in the object detector, larger sizes increase discriminability, must be square
 fliplr              = 0; % if set to one, the model automatically learns mirrored versions of the object
@@ -61,8 +60,7 @@ opt.control         = struct('maxbbox',maxbbox,'update_detector',update_detector
         
 % Run TLD -----------------------------------------------------------------
 %profile on;
-% [bb,conf] = tldExample(opt);
-[bb,conf,weights] = tldSaliency(opt); 
+[bb, conf, weights] = tldSaliency(opt); 
 %profile off; 
 %profile viewer;
 

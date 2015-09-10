@@ -13,7 +13,7 @@ source.im0 = img_get(source,source.idx(1));
 if ~isfield(source,'init_bb_name')
     source.init_bb_name = 'init.txt';
 end
-init_bb_filename = fullfile(source.input,source.init_bb_name);
+init_bb_filename = fullfile(source.input, source.init_bb_name);
 if source.camera == 0 && exist(init_bb_filename,'file')
     bb = dlmread(init_bb_filename);
     source.bb = bb(:);
