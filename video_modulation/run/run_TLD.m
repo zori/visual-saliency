@@ -33,10 +33,7 @@ opt.sequence_name = [opt.sequence_name suffix];
 opt.modulation = 3;
 opt.smoothing_param_recipr = 7; % 3, 7
 
-opt.source          = struct('init_bb_name', initial_region,... % bounding box file
-    'camera', 0, ... % camera/directory swith
-    'input', fullfile('dataset', 'video', opt.sequence_name, filesep),... % directory_name
-    'bb0', []); % depricated, 'init_bb_name' is used now % initial_bounding_box (if empty, it will be selected by the user)
+opt.source = make_source_struct(initial_region, opt.sequence_name);
 
 opt.output          = 'TLD_source/_output/';
 mkdir(opt.output); % output directory that will contain bounding boxes + confidence
