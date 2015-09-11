@@ -23,6 +23,10 @@ switch minim_type
                         % linear
                     case MinimisationOption.TEMP_WEXP
                         weight = exp(weight);
+                        % weight = exp(5 .* weight);
+                        % TODO(zori) the 1/5 coefficient leads to singularities
+                        % (NaN .F pyramid field). Explain why.
+                        % weight = exp(weight ./ 5);
                         % multiplicative constant doesn't matter, because of the
                         % normalisation
                         % weight = 0.5 * exp(weight);
@@ -32,6 +36,7 @@ switch minim_type
                         weight = weight.^0.5;
                     case MinimisationOption.TEMP_WLOG
                         weight = log(weight + 1);
+                        % weight = log(5 .* (weight + 1));
                     case MinimisationOption.TEMP_WREC
                         weight = 1 - 1 ./ (weight + 1);
                     case MinimisationOption.TEMP_WEXPREC
