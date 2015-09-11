@@ -3,7 +3,7 @@
 % This file is part of TLD.
 %
 
-function [bb,conf,weights] = tldSaliency(opt)
+function [bb, conf, weights] = tldSaliency(opt)
 global tld; % holds results and temporal variables
 % allow to not visualise the modulation
 % however, interrupting the processing earlier (by pressing 'q') depends on
@@ -87,6 +87,7 @@ else
     video_name_append = '';
 end
 video_name_append = [video_name_append ' MOD' modulation_type_str];
+% video_name_append = [video_name_append ' ALPHA' ' MOD' modulation_type_str];
 if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
     param.smoothing_param = 1 / opt.smoothing_param_recipr; % exponential smoothing param; in (0,1]
     fprintf('\nsmoothing param recipr: %s; smoothing param: %f\n', num2str(opt.smoothing_param_recipr), param.smoothing_param);
@@ -110,18 +111,18 @@ if param.modulation_type == MOD_TYPE_EXP_SMOOTHING
 end
 
 % add (W)LLS option and AREA option to output name
-% minim_opt.within_frame = MinimisationOption.T_ORIG; % T_ORIG % T_DLLS; % T_SLLS % T_RLLS
+minim_opt.within_frame = MinimisationOption.T_ORIG; % T_ORIG % T_DLLS; % T_SLLS % T_RLLS
 
 % best within-frame minimisation (in terms of not increasing flicker saliency)
-minim_opt.within_frame = MinimisationOption.T_DLLS;
+% minim_opt.within_frame = MinimisationOption.T_DLLS;
 
 
 % % choosing a weighting mapping:
 % minim_opt.temporal = MinimisationOption.TEMP_O;
-% minim_opt.temporal = MinimisationOption.TEMP_WLIN; % TEMP_WEXP % TEMP_WSQ % TEMP_WSQRT % TEMP_WLOG % TEMP_WREC % TEMP_WEXPREC
+minim_opt.temporal = MinimisationOption.TEMP_WLIN; % TEMP_WEXP % TEMP_WSQ % TEMP_WSQRT % TEMP_WLOG % TEMP_WREC % TEMP_WEXPREC
 
 % best temporal minimisation (in terms of not increasing flicker saliency)
-minim_opt.temporal = MinimisationOption.TEMP_WEXP;
+% minim_opt.temporal = MinimisationOption.TEMP_WEXP;
 % minim_opt.temporal = MinimisationOption.TEMP_WSQ;
 % minim_opt.temporal = MinimisationOption.TEMP_WSQRT;
 % minim_opt.temporal = MinimisationOption.TEMP_WLOG;
